@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    await ensureDatabaseSchema();
     const list = await db.select().from(s.accounts);
     return NextResponse.json({ success: true, accounts: list });
   } catch (error) {
@@ -16,6 +17,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    await ensureDatabaseSchema();
     const body = await request.json();
     const { name, type, bankName, initialBalance = 0, color = '#3b82f6' } = body;
 

@@ -284,28 +284,75 @@ export async function ensureDatabaseSchema() {
       `);
 
       // --- Migrações Incrementais (Garante colunas em bancos já existentes) ---
+      // Credit Cards
+      await addColumnIfNotExists('credit_cards', 'last_4_digits', "TEXT DEFAULT '1234'");
+      await addColumnIfNotExists('credit_cards', 'default_account_id', 'TEXT');
+      await addColumnIfNotExists('credit_cards', 'color', "TEXT DEFAULT '#1e293b'");
+      await addColumnIfNotExists('credit_cards', 'brand', "TEXT DEFAULT 'Mastercard'");
+      await addColumnIfNotExists('credit_cards', 'bank', "TEXT DEFAULT 'Nubank'");
+      await addColumnIfNotExists('credit_cards', 'credit_limit', 'REAL DEFAULT 5000');
+      await addColumnIfNotExists('credit_cards', 'closing_day', 'INTEGER DEFAULT 3');
+      await addColumnIfNotExists('credit_cards', 'due_day', 'INTEGER DEFAULT 10');
+
+      // Se a tabela credit_cards tinha a coluna antiga 'last4_digits', migramos os valores para 'last_4_digits'
+      try {
+        await db.run(sql.raw('UPDATE credit_cards SET last_4_digits = last4_digits WHERE (last_4_digits IS NULL OR last_4_digits = \'1234\') AND last4_digits IS NOT NULL'));
+      } catch {
+        // Ignora caso a coluna last4_digits não exista
+      }
+
+      // Accounts
+      await addColumnIfNotExists('accounts', 'bank_name', 'TEXT');
+      await addColumnIfNotExists('accounts', 'initial_balance', 'REAL DEFAULT 0');
+      await addColumnIfNotExists('accounts', 'current_balance', 'REAL DEFAULT 0');
+      await addColumnIfNotExists('accounts', 'color', "TEXT DEFAULT '#3b82f6'");
+      await addColumnIfNotExists('accounts', 'icon', "TEXT DEFAULT 'wallet'");
+      await addColumnIfNotExists('accounts', 'is_active', 'INTEGER DEFAULT 1');
+
       // Categories
       await addColumnIfNotExists('categories', 'parent_id', 'TEXT');
       await addColumnIfNotExists('categories', 'is_system', 'INTEGER DEFAULT 0');
+      await addColumnIfNotExists('categories', 'icon', "TEXT DEFAULT 'tag'");
+      await addColumnIfNotExists('categories', 'color', "TEXT DEFAULT '#64748b'");
+      await addColumnIfNotExists('categories', 'type', "TEXT DEFAULT 'EXPENSE'");
 
       // Invoices
       await addColumnIfNotExists('invoices', 'cycle_start_date', "TEXT NOT NULL DEFAULT ''");
       await addColumnIfNotExists('invoices', 'cycle_end_date', "TEXT NOT NULL DEFAULT ''");
       await addColumnIfNotExists('invoices', 'payment_transaction_id', 'TEXT');
+      await addColumnIfNotExists('invoices', 'total_amount', 'REAL DEFAULT 0');
+      await addColumnIfNotExists('invoices', 'paid_amount', 'REAL DEFAULT 0');
+      await addColumnIfNotExists('invoices', 'status', "TEXT DEFAULT 'OPEN'");
+      await addColumnIfNotExists('invoices', 'paid_at', 'TEXT');
 
       // Installments
       await addColumnIfNotExists('installments', 'invoice_id', 'TEXT');
+      await addColumnIfNotExists('installments', 'status', "TEXT DEFAULT 'PENDING'");
 
       // Installment Purchases
       await addColumnIfNotExists('installment_purchases', 'notes', 'TEXT');
+      await addColumnIfNotExists('installment_purchases', 'status', "TEXT DEFAULT 'ACTIVE'");
+      await addColumnIfNotExists('installment_purchases', 'first_billing_month', 'INTEGER DEFAULT 1');
+      await addColumnIfNotExists('installment_purchases', 'first_billing_year', 'INTEGER DEFAULT 2026');
 
       // Investments
       await addColumnIfNotExists('investments', 'notes', 'TEXT');
       await addColumnIfNotExists('investments', 'institution', 'TEXT');
+      await addColumnIfNotExists('investments', 'invested_amount', 'REAL DEFAULT 0');
+      await addColumnIfNotExists('investments', 'current_value', 'REAL DEFAULT 0');
 
       // Transactions
+      await addColumnIfNotExists('transactions', 'account_id', 'TEXT');
+      await addColumnIfNotExists('transactions', 'credit_card_id', 'TEXT');
       await addColumnIfNotExists('transactions', 'invoice_id', 'TEXT');
+      await addColumnIfNotExists('transactions', 'category_id', 'TEXT');
+      await addColumnIfNotExists('transactions', 'merchant_id', 'TEXT');
       await addColumnIfNotExists('transactions', 'installment_id', 'TEXT');
+      await addColumnIfNotExists('transactions', 'billing_month', 'INTEGER');
+      await addColumnIfNotExists('transactions', 'billing_year', 'INTEGER');
+      await addColumnIfNotExists('transactions', 'import_batch_id', 'TEXT');
+      await addColumnIfNotExists('transactions', 'external_id', 'TEXT');
+      await addColumnIfNotExists('transactions', 'source', 'TEXT');
       await addColumnIfNotExists('transactions', 'is_recurring', 'INTEGER DEFAULT 0');
       await addColumnIfNotExists('transactions', 'notes', 'TEXT');
 

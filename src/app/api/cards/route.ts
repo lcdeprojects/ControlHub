@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    await ensureDatabaseSchema();
     const { searchParams } = new URL(request.url);
     const month = parseInt(searchParams.get('month') || '8', 10);
     const year = parseInt(searchParams.get('year') || '2026', 10);
@@ -76,6 +77,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await ensureDatabaseSchema();
     const body = await request.json();
     const {
       name,
@@ -93,7 +95,7 @@ export async function POST(request: Request) {
       .insert(s.users)
       .values({
         id: 'usr_default',
-        name: 'Usuário',
+        name: 'Leonardo C.',
         email: 'usuario@controlhub.app',
       })
       .onConflictDoNothing();

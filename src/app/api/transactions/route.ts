@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
 import { normalizeTransactionDescription } from '@/lib/engines/matching-algorithm';
@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    await ensureDatabaseSchema();
     const list = await db
       .select({
         id: s.transactions.id,
@@ -43,6 +44,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    await ensureDatabaseSchema();
     const body = await request.json();
     const {
       type,
