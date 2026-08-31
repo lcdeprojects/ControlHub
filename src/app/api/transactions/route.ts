@@ -7,6 +7,8 @@ import { calculateInvoiceCycle } from '@/lib/engines/invoice-cycle';
 import { generateInstallments } from '@/lib/engines/installment-engine';
 import { eq, desc } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const list = await db

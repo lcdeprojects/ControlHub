@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import * as s from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const list = await db.select().from(s.investments);
+    const list = await db.select().from(s.investments).orderBy(desc(s.investments.currentValue));
     return NextResponse.json({ success: true, investments: list });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
@@ -15,30 +17,29 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, type, investedAmount = 0, currentValue = 0, institution, notes } = body;
+    const { name, type, investedAmount = 0, currentValue = 0, institution } = body;
 
-    const invId = `inv_${Date.now()}`;
+    await db
+      .insert(s.users)
+      .values({
+        id: 'usr_default',
+        name: 'Usuário',
+        email: 'usuario@controlhub.app',
+      })
+      .onConflictDoNothing();
+
+    const id = `inv_${Date.now()}`;
     const newInv = {
-      id: invId,
+      id,
       userId: 'usr_default',
       name,
       type,
+      institution: institution || 'Próprio',
       investedAmount: parseFloat(investedAmount),
       currentValue: parseFloat(currentValue),
-      institution,
-      notes,
     };
 
     await db.insert(s.investments).values(newInv);
-
-    await db.insert(s.auditLogs).values({
-      id: `aud_${Date.now()}`,
-      userId: 'usr_default',
-      entityType: 'INVESTMENT',
-      entityId: invId,
-      action: 'CREATE',
-      newValues: JSON.stringify(newInv),
-    });
 
     return NextResponse.json({ success: true, investment: newInv });
   } catch (error) {

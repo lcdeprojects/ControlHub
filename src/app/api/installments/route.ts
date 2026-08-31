@@ -4,6 +4,8 @@ import * as s from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getShortMonth } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

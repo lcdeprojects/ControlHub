@@ -3,6 +3,8 @@ import { db } from '@/db';
 import * as s from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -86,6 +88,15 @@ export async function POST(request: Request) {
       defaultAccountId,
       color = '#18181b',
     } = body;
+
+    await db
+      .insert(s.users)
+      .values({
+        id: 'usr_default',
+        name: 'Usuário',
+        email: 'usuario@controlhub.app',
+      })
+      .onConflictDoNothing();
 
     const cardId = `card_${Date.now()}`;
     const newCard = {
