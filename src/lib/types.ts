@@ -99,3 +99,21 @@ export interface ImportParsedRow {
   matchScore?: MatchScoreResult;
   isDuplicate: boolean;
 }
+
+export interface RawTransactionItem {
+  id: string;
+  transactionType: TransactionType;
+  amount: number;
+  transactionDate: string;
+  competenceMonth: number;
+  competenceYear: number;
+  billingMonth?: number | null;
+  billingYear?: number | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  accountId?: string | null;
+  creditCardId?: string | null;
+  description?: string;
+  externalId?: string | null;
+}
+

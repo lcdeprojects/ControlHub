@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import * as s from '@/db/schema';
 import { calculateFinancialSummary } from '@/lib/engines/financial-calculator';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { getShortMonth } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -46,6 +46,8 @@ export async function GET(request: Request) {
         billingYear: s.transactions.billingYear,
         categoryId: s.transactions.categoryId,
         categoryName: s.categories.name,
+        description: s.transactions.description,
+        externalId: s.transactions.externalId,
       })
       .from(s.transactions)
       .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id));

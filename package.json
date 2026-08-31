@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "clean": "node -e \"const fs=require('fs'); if(fs.existsSync('.next')) fs.rmSync('.next', {recursive:true, force:true});\"",
+    "clean": "node -e \"const fs=require('fs'); if(fs.existsSync('.next')) { try { fs.rmSync('.next', {recursive:true, force:true}); } catch(e){} }\"",
     "predev": "npm run clean",
     "prebuild": "npm run clean",
     "dev": "next dev",
