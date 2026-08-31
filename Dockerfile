@@ -24,19 +24,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 RUN mkdir -p ./public
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/src/db ./src/db
+COPY --from=builder /app/src ./src
 
-# Cria diretório de dados para persistência do SQLite
-RUN mkdir -p /data && chown -R nextjs:nodejs /data
-USER nextjs
+# Garante permissões na pasta de dados do SQLite
+RUN mkdir -p /data && chmod 777 /data
 
 EXPOSE 3000
 
