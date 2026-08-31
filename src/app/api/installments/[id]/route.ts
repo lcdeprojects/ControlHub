@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabaseSchema();
     const { id } = await params;
 
     const purchase = (
@@ -56,6 +59,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabaseSchema();
     const { id } = await params;
 
     const existing = (
@@ -66,13 +70,28 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Parcelamento não encontrado.' }, { status: 404 });
     }
 
-    // 1. Deletar as parcelas associadas
+    // 1. Buscar todas as parcelas vinculadas a essa compra
+    const relatedInstallments = await db
+      .select({ id: s.installments.id })
+      .from(s.installments)
+      .where(eq(s.installments.installmentPurchaseId, id));
+
+    const installmentIds = relatedInstallments.map((it) => it.id);
+
+    // 2. Deletar transações que apontam para essas parcelas
+    if (installmentIds.length > 0) {
+      await db
+        .delete(s.transactions)
+        .where(inArray(s.transactions.installmentId, installmentIds));
+    }
+
+    // 3. Deletar as parcelas associadas
     await db.delete(s.installments).where(eq(s.installments.installmentPurchaseId, id));
 
-    // 2. Deletar a compra parcelada original
+    // 4. Deletar a compra parcelada original
     await db.delete(s.installmentPurchases).where(eq(s.installmentPurchases.id, id));
 
-    // 3. Gravar log de auditoria
+    // 5. Gravar log de auditoria
     await db.insert(s.auditLogs).values({
       id: `aud_${Date.now()}`,
       userId: existing.userId,

@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { eq } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabaseSchema();
     const { id } = await params;
     const body = await request.json();
     const { name, bank, brand, last4Digits, creditLimit, closingDay, dueDay, color } = body;
@@ -55,6 +58,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabaseSchema();
     const { id } = await params;
 
     const existing = (
@@ -65,6 +69,18 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Cartão não encontrado.' }, { status: 404 });
     }
 
+    // 1. Desvincular ou limpar transações do cartão para evitar Foreign Key error
+    await db
+      .delete(s.transactions)
+      .where(eq(s.transactions.creditCardId, id));
+
+    // 2. Desvincular despesas recorrentes
+    await db
+      .update(s.recurringTransactions)
+      .set({ creditCardId: null })
+      .where(eq(s.recurringTransactions.creditCardId, id));
+
+    // 3. Deletar o cartão
     await db.delete(s.creditCards).where(eq(s.creditCards.id, id));
 
     await db.insert(s.auditLogs).values({
@@ -78,6 +94,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, deletedId: id });
   } catch (error) {
+    console.error('Delete card error:', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }

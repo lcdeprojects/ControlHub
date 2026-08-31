@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabaseSchema();
     const { id } = await params;
     const body = await request.json();
     const { name, type, bankName, currentBalance, color } = body;
@@ -52,6 +55,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabaseSchema();
     const { id } = await params;
 
     const existing = (
@@ -62,6 +66,27 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Conta não encontrada.' }, { status: 404 });
     }
 
+    // 1. Limpar / desvincular referências para evitar FOREIGN KEY error
+    await db
+      .update(s.transactions)
+      .set({ accountId: null })
+      .where(eq(s.transactions.accountId, id));
+
+    await db
+      .update(s.recurringTransactions)
+      .set({ accountId: null })
+      .where(eq(s.recurringTransactions.accountId, id));
+
+    await db
+      .update(s.creditCards)
+      .set({ defaultAccountId: null })
+      .where(eq(s.creditCards.defaultAccountId, id));
+
+    await db
+      .delete(s.transfers)
+      .where(or(eq(s.transfers.sourceAccountId, id), eq(s.transfers.destinationAccountId, id)));
+
+    // 2. Deletar a conta
     await db.delete(s.accounts).where(eq(s.accounts.id, id));
 
     await db.insert(s.auditLogs).values({
@@ -75,6 +100,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, deletedId: id });
   } catch (error) {
+    console.error('Delete account error:', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
