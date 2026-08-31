@@ -79,12 +79,40 @@ export async function GET(request: Request) {
       )
       .reduce((acc, curr) => acc + curr.amount, 0);
 
-    // 5. Investimentos e Bens
+    // 5. Custos da Casa do Mês (Pendentes de Liquidação)
+    const recurringList = await db
+      .select()
+      .from(s.recurringTransactions)
+      .where(
+        and(
+          eq(s.recurringTransactions.userId, 'usr_default'),
+          eq(s.recurringTransactions.isActive, true)
+        )
+      );
+
+    const pendingHouseholdTotal = recurringList
+      .filter((rec) => {
+        const isPaid = rawTransactions.some(
+          (t) =>
+            t.competenceMonth === month &&
+            t.competenceYear === year &&
+            (t.externalId === rec.id || t.description === rec.description)
+        );
+        return !isPaid;
+      })
+      .reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
+    const totalHouseholdMonth = recurringList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
+    // 6. Investimentos e Bens
     const allInvestments = await db.select().from(s.investments);
     const totalInvestments = allInvestments.reduce((acc, curr) => acc + (curr.currentValue || 0), 0);
-    const netWorth = availableBalance + totalInvestments - (currentInvoicesTotal + futureInstallmentsTotal);
+    
+    // Passivos e Obrigações Totais: Faturas do mês + Parcelas futuras + Custos da casa pendentes no mês
+    const totalLiabilities = currentInvoicesTotal + futureInstallmentsTotal + pendingHouseholdTotal;
+    const netWorth = availableBalance + totalInvestments - totalLiabilities;
 
-    // 6. Cálculo do DRE: Consumo vs Fluxo de Caixa
+    // 7. Cálculo do DRE: Consumo vs Fluxo de Caixa
     const prevMonthTx = rawTransactions.filter(
       (t) =>
         (t.competenceMonth === prevMonth && t.competenceYear === prevYear) ||
@@ -98,7 +126,7 @@ export async function GET(request: Request) {
       year
     );
 
-    // 7. Gráfico Dinâmico de 6 Meses centrado no ano/mês selecionado
+    // 8. Gráfico Dinâmico de 6 Meses centrado no ano/mês selecionado
     const chartData = [];
     for (let offset = -4; offset <= 1; offset++) {
       let targetM = month + offset;
@@ -121,12 +149,12 @@ export async function GET(request: Request) {
       });
     }
 
-    // 8. Gráfico de Evolução Patrimonial
+    // 9. Gráfico de Evolução Patrimonial
     const netWorthData = chartData.map((cd, idx) => ({
       month: cd.month,
       netWorth: Math.max(netWorth + (idx - 4) * (summary.consumption.savings || 0), 0),
       assets: availableBalance + totalInvestments,
-      liabilities: currentInvoicesTotal + futureInstallmentsTotal,
+      liabilities: totalLiabilities,
     }));
 
     return NextResponse.json({
@@ -135,6 +163,8 @@ export async function GET(request: Request) {
       currentInvoicesTotal,
       nextInvoicesTotal,
       futureInstallmentsTotal,
+      pendingHouseholdTotal,
+      totalHouseholdMonth,
       netWorth,
       summary,
       chartData,

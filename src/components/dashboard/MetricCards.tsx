@@ -210,7 +210,7 @@ export function MetricCards({ viewMode, data }: MetricCardsProps) {
           <h2 className="text-2xl font-black text-white">
             {formatCurrency(data.netWorth)}
           </h2>
-          <p className="text-xs text-blue-300/80 mt-1">Ativos + Contas − Obrigações</p>
+          <p className="text-xs text-blue-300/80 mt-1">Ativos + Contas − Obrigações & Custos</p>
         </div>
       </Card>
     </div>

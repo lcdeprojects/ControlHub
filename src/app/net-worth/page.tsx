@@ -72,13 +72,15 @@ export default function NetWorthPage() {
 
   const currentInvoices = stats?.currentInvoicesTotal || 0;
   const futureInstallments = stats?.futureInstallmentsTotal || 0;
-  const totalLiabilities = currentInvoices + futureInstallments;
+  const pendingHousehold = stats?.pendingHouseholdTotal || 0;
+  const totalLiabilities = currentInvoices + futureInstallments + pendingHousehold;
   const netWorth = totalGrossAssets - totalLiabilities;
 
   const liabilitiesList = [
     { name: 'Faturas de Cartão no Mês', type: 'Curto Prazo', value: currentInvoices },
+    { name: 'Custos da Casa Pendentes no Mês', type: 'Curto Prazo', value: pendingHousehold },
     { name: 'Saldo Restante de Parcelamentos Futuros', type: 'Médio Prazo', value: futureInstallments },
-  ];
+  ].filter((item) => item.value > 0);
 
   const handleCreateAsset = async (e: React.FormEvent) => {
     e.preventDefault();
