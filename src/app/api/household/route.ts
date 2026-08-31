@@ -15,13 +15,14 @@ export async function GET(request: Request) {
     const year = parseInt(searchParams.get('year') || '2026', 10);
 
     // 1. Buscar despesas fixas da casa (tabela recurring_transactions)
-    const recurring = await db
+    const recurringList = await db
       .select({
         id: s.recurringTransactions.id,
         name: s.recurringTransactions.description,
         amount: s.recurringTransactions.amount,
         dayOfMonth: s.recurringTransactions.dayOfMonth,
         accountId: s.recurringTransactions.accountId,
+        accountName: s.accounts.name,
         categoryId: s.recurringTransactions.categoryId,
         categoryName: s.categories.name,
         categoryIcon: s.categories.icon,
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
       })
       .from(s.recurringTransactions)
       .leftJoin(s.categories, eq(s.recurringTransactions.categoryId, s.categories.id))
+      .leftJoin(s.accounts, eq(s.recurringTransactions.accountId, s.accounts.id))
       .where(
         and(
           eq(s.recurringTransactions.userId, 'usr_default'),
@@ -37,10 +39,60 @@ export async function GET(request: Request) {
         )
       );
 
-    // 2. Buscar transações reais de categorias HOUSEHOLD no mês/ano selecionado
-    const transactions = await db
+    // 2. Buscar todas as transações do mês para cruzar o status de pagamento
+    const monthTransactions = await db
       .select({
         id: s.transactions.id,
+        externalId: s.transactions.externalId,
+        description: s.transactions.description,
+        amount: s.transactions.amount,
+        transactionDate: s.transactions.transactionDate,
+        accountId: s.transactions.accountId,
+        accountName: s.accounts.name,
+        competenceMonth: s.transactions.competenceMonth,
+        competenceYear: s.transactions.competenceYear,
+        categoryType: s.categories.type,
+      })
+      .from(s.transactions)
+      .leftJoin(s.accounts, eq(s.transactions.accountId, s.accounts.id))
+      .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id))
+      .where(
+        and(
+          eq(s.transactions.userId, 'usr_default'),
+          eq(s.transactions.competenceMonth, month),
+          eq(s.transactions.competenceYear, year)
+        )
+      );
+
+    // 3. Cruzar cada custo recorrente com as baixas do mês
+    const enrichedExpenses = recurringList.map((rec) => {
+      // Procura transação vinculada por externalId ou por descrição idêntica no mês
+      const paidTx = monthTransactions.find(
+        (tx) => tx.externalId === rec.id || tx.description === rec.name
+      );
+
+      const isPaid = !!paidTx;
+
+      return {
+        ...rec,
+        status: isPaid ? ('PAID' as const) : ('PENDING' as const),
+        paidTransactionId: paidTx ? paidTx.id : null,
+        paidDate: paidTx ? paidTx.transactionDate : null,
+        paidAccountId: paidTx ? paidTx.accountId : rec.accountId,
+        paidAccountName: paidTx ? paidTx.accountName : rec.accountName,
+      };
+    });
+
+    const totalPlanned = enrichedExpenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const totalPaid = enrichedExpenses
+      .filter((e) => e.status === 'PAID')
+      .reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const totalPending = totalPlanned - totalPaid;
+    const pendingCount = enrichedExpenses.filter((e) => e.status === 'PENDING').length;
+
+    // 4. Montar histórico dos últimos 6 meses para o gráfico
+    const allHistoryTx = await db
+      .select({
         amount: s.transactions.amount,
         competenceMonth: s.transactions.competenceMonth,
         competenceYear: s.transactions.competenceYear,
@@ -49,10 +101,6 @@ export async function GET(request: Request) {
       .from(s.transactions)
       .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id));
 
-    // Se houver itens recorrentes, usa o valor deles como base para o mês
-    const totalRecurring = recurring.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-
-    // 3. Montar histórico dos últimos 6 meses para o gráfico
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const monthlyHistory = [];
 
@@ -64,13 +112,11 @@ export async function GET(request: Request) {
         y -= 1;
       }
 
-      // Transações com categoria HOUSEHOLD nesse mês específico
-      const monthTxAmount = transactions
+      const monthTxAmount = allHistoryTx
         .filter((t) => t.competenceMonth === m && t.competenceYear === y && t.categoryType === 'HOUSEHOLD')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-      // Valor total do mês: soma transações ou despesas fixas recorrentes
-      const totalForMonth = monthTxAmount > 0 ? monthTxAmount : totalRecurring;
+      const totalForMonth = monthTxAmount > 0 ? monthTxAmount : totalPlanned;
 
       monthlyHistory.push({
         month: `${monthNames[m - 1]}/${String(y).slice(2)}`,
@@ -80,8 +126,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      expenses: recurring,
-      totalMonth: totalRecurring,
+      expenses: enrichedExpenses,
+      totalPlanned,
+      totalPaid,
+      totalPending,
+      pendingCount,
       monthlyHistory,
     });
   } catch (error) {
@@ -134,7 +183,7 @@ export async function POST(request: Request) {
       isActive: true,
     });
 
-    // 2. Se o usuário selecionou uma conta bancária e optou por debitar agora
+    // 2. Se o usuário selecionou uma conta bancária e optou por debitar no mês atual
     if (accountId && debitNow) {
       const norm = normalizeTransactionDescription(name);
       const dayStr = String(Math.min(Math.max(parseInt(dayOfMonth || '5', 10), 1), 28)).padStart(2, '0');
@@ -167,6 +216,8 @@ export async function POST(request: Request) {
         billingMonth: month,
         billingYear: year,
         fingerprint: fp,
+        externalId: newId,
+        source: 'HOUSEHOLD_RECURRING',
         isRecurring: true,
         notes: 'Custo residencial recorrente',
       });
