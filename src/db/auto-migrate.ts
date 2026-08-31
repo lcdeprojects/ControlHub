@@ -1,6 +1,6 @@
 import { db } from './index';
 import * as s from './schema';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
@@ -118,6 +118,42 @@ async function repairInvoicesTable() {
     }
   } catch (err) {
     console.error('Error repairing invoices table:', err);
+  }
+}
+
+async function syncInstallmentTransactions() {
+  try {
+    const allPurchases = await db.select().from(s.installmentPurchases);
+    for (const pur of allPurchases) {
+      const insts = await db.select().from(s.installments).where(eq(s.installments.installmentPurchaseId, pur.id));
+      for (const it of insts) {
+        const txCheck = (await db.select().from(s.transactions).where(eq(s.transactions.installmentId, it.id)))[0];
+        if (!txCheck) {
+          const compDate = new Date(pur.purchaseDate + 'T12:00:00');
+          const fp = `fp_inst_${it.id}_${pur.userId}`;
+          await db.insert(s.transactions).values({
+            id: `tx_${it.id}`,
+            userId: pur.userId,
+            creditCardId: pur.creditCardId,
+            categoryId: pur.categoryId,
+            installmentId: it.id,
+            transactionType: 'INSTALLMENT',
+            amount: it.amount,
+            transactionDate: pur.purchaseDate,
+            competenceMonth: compDate.getMonth() + 1,
+            competenceYear: compDate.getFullYear(),
+            billingMonth: it.billingMonth,
+            billingYear: it.billingYear,
+            description: `${pur.description} (${it.installmentNumber}/${it.totalInstallments})`,
+            normalizedDescription: pur.normalizedDescription,
+            paymentMethod: 'CREDIT',
+            fingerprint: fp,
+          }).onConflictDoNothing();
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error syncing installment transactions:', err);
   }
 }
 
@@ -496,6 +532,9 @@ export async function ensureDatabaseSchema() {
           isSystem: true,
         }).onConflictDoNothing();
       }
+
+      // Sincronizar transações de parcelas existentes
+      await syncInstallmentTransactions();
 
       isInitialized = true;
       console.log('✅ Esquema do banco de dados verificado e sincronizado com sucesso.');

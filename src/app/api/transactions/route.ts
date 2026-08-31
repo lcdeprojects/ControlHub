@@ -127,10 +127,9 @@ export async function POST(request: Request) {
         creditCard: card || { closingDay: 3, dueDay: 10 },
       });
 
-      let firstInstId: string | null = null;
+      let firstTransId: string | null = null;
       for (const it of items) {
         const instId = `inst_${purchaseId}_${it.installmentNumber}`;
-        if (it.installmentNumber === 1) firstInstId = instId;
         await db.insert(s.installments).values({
           id: instId,
           installmentPurchaseId: purchaseId,
@@ -141,39 +140,41 @@ export async function POST(request: Request) {
           billingYear: it.billingYear,
           status: 'PENDING',
         });
+
+        // 3. Criar a transação correspondente para ESTA parcela entrar na fatura do mês respectivo
+        const transId = `tx_${purchaseId}_${it.installmentNumber}`;
+        if (it.installmentNumber === 1) firstTransId = transId;
+
+        const fp = generateTransactionFingerprint({
+          userId,
+          transactionDate,
+          amount: it.amount,
+          normalizedDescription: norm.normalizedDescription,
+          sourceId: validCreditCardId,
+          installmentNumber: it.installmentNumber,
+        });
+
+        await db.insert(s.transactions).values({
+          id: transId,
+          userId,
+          creditCardId: validCreditCardId,
+          categoryId: validCategoryId,
+          installmentId: instId,
+          transactionType: 'INSTALLMENT',
+          amount: it.amount,
+          transactionDate,
+          competenceMonth: compMonth,
+          competenceYear: compYear,
+          billingMonth: it.billingMonth,
+          billingYear: it.billingYear,
+          description: `${description} (${it.installmentNumber}/${installmentCount})`,
+          normalizedDescription: norm.normalizedDescription,
+          paymentMethod: 'CREDIT',
+          fingerprint: fp,
+        });
       }
 
-      // 3. Criar transação master de competência
-      const transId = `tx_${Date.now()}`;
-      const fp = generateTransactionFingerprint({
-        userId,
-        transactionDate,
-        amount,
-        normalizedDescription: norm.normalizedDescription,
-        sourceId: validCreditCardId,
-        installmentNumber: 1,
-      });
-
-      await db.insert(s.transactions).values({
-        id: transId,
-        userId,
-        creditCardId: validCreditCardId,
-        categoryId: validCategoryId,
-        installmentId: firstInstId,
-        transactionType: 'INSTALLMENT',
-        amount,
-        transactionDate,
-        competenceMonth: compMonth,
-        competenceYear: compYear,
-        billingMonth: cycle.billingMonth,
-        billingYear: cycle.billingYear,
-        description,
-        normalizedDescription: norm.normalizedDescription,
-        paymentMethod: 'CREDIT',
-        fingerprint: fp,
-      });
-
-      return NextResponse.json({ success: true, transactionId: transId, purchaseId });
+      return NextResponse.json({ success: true, transactionId: firstTransId, purchaseId });
     }
 
     // Se for compra à vista no cartão de crédito

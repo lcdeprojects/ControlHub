@@ -5,6 +5,7 @@
   "scripts": {
     "clean": "node -e \"const fs=require('fs'); if(fs.existsSync('.next')) fs.rmSync('.next', {recursive:true, force:true});\"",
     "predev": "npm run clean",
+    "prebuild": "npm run clean",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
