@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { formatCurrency, formatMonthYear } from '@/lib/utils';
@@ -25,68 +25,149 @@ import {
   Pencil,
   Trash2,
   Check,
+  Tag,
 } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 
+interface HouseExpense {
+  id: string;
+  name: string;
+  amount: number;
+  dayOfMonth?: number;
+  categoryId?: string;
+  categoryName?: string;
+  categoryIcon?: string;
+  categoryColor?: string;
+}
+
+const iconMap: Record<string, any> = {
+  home: Home,
+  building: Building,
+  zap: Zap,
+  droplet: Droplet,
+  wifi: Wifi,
+  wrench: Wrench,
+  'shopping-cart': ShoppingCart,
+  tag: Tag,
+};
+
 export default function HouseholdPage() {
   const { month, year } = usePeriod();
-  const [houseExpenses, setHouseExpenses] = useState<any[]>([]);
+  const [houseExpenses, setHouseExpenses] = useState<HouseExpense[]>([]);
+  const [monthlyHistory, setMonthlyHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Modal States
   const [isNewExpenseOpen, setIsNewExpenseOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newAmount, setNewAmount] = useState('');
+  const [newDay, setNewDay] = useState('5');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [editingExpense, setEditingExpense] = useState<any | null>(null);
+  const [editingExpense, setEditingExpense] = useState<HouseExpense | null>(null);
   const [editName, setEditName] = useState('');
   const [editAmount, setEditAmount] = useState('');
 
-  const totalHouseMonth = houseExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/household?month=${month}&year=${year}`);
+      const data = await res.json();
+      if (data.success) {
+        setHouseExpenses(data.expenses || []);
+        setMonthlyHistory(data.monthlyHistory || []);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar despesas da casa:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const monthlyHistory = [
-    { month: 'Mês Atual', amount: totalHouseMonth },
-  ];
+  useEffect(() => {
+    fetchExpenses();
+  }, [month, year]);
 
-  const handleAddExpense = (e: React.FormEvent) => {
+  const totalHouseMonth = houseExpenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newAmount) return;
 
-    const newItem = {
-      id: `h_${Date.now()}`,
-      name: newName,
-      amount: parseFloat(newAmount.replace(',', '.')),
-      color: '#3b82f6',
-    };
+    try {
+      setIsSaving(true);
+      const res = await fetch('/api/household', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName,
+          amount: newAmount,
+          dayOfMonth: newDay,
+        }),
+      });
 
-    setHouseExpenses([...houseExpenses, newItem]);
-    setIsNewExpenseOpen(false);
-    setNewName('');
-    setNewAmount('');
+      const data = await res.json();
+      if (data.success) {
+        setIsNewExpenseOpen(false);
+        setNewName('');
+        setNewAmount('');
+        setNewDay('5');
+        await fetchExpenses();
+      }
+    } catch (err) {
+      console.error('Erro ao adicionar custo da casa:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleOpenEdit = (item: any) => {
+  const handleOpenEdit = (item: HouseExpense) => {
     setEditingExpense(item);
     setEditName(item.name);
     setEditAmount(item.amount.toString());
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense) return;
 
-    setHouseExpenses(
-      houseExpenses.map((h) =>
-        h.id === editingExpense.id
-          ? { ...h, name: editName, amount: parseFloat(editAmount.replace(',', '.')) }
-          : h
-      )
-    );
-    setEditingExpense(null);
+    try {
+      setIsSaving(true);
+      const res = await fetch(`/api/household/${editingExpense.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          amount: editAmount,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setEditingExpense(null);
+        await fetchExpenses();
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar custo da casa:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = async (id: string) => {
     if (!confirm('Deseja realmente remover esta despesa da casa?')) return;
-    setHouseExpenses(houseExpenses.filter((h) => h.id !== id));
+
+    try {
+      const res = await fetch(`/api/household/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchExpenses();
+      }
+    } catch (err) {
+      console.error('Erro ao excluir custo da casa:', err);
+    }
   };
 
   return (
@@ -130,60 +211,69 @@ export default function HouseholdPage() {
           </div>
         </div>
         <div className="text-sm text-slate-300">
-          Média mensal: <strong>{formatCurrency(totalHouseMonth)}</strong>
+          Total de itens cadastrados: <strong>{houseExpenses.length}</strong>
         </div>
       </div>
 
       {/* Expenses Breakdown Grid */}
-      {houseExpenses.length === 0 ? (
+      {loading ? (
+        <Card className="py-8 text-center text-xs text-slate-400">
+          Carregando custos da casa...
+        </Card>
+      ) : houseExpenses.length === 0 ? (
         <Card className="py-8 text-center text-xs text-slate-500">
           Nenhuma despesa de casa cadastrada. Clique em "Nova Despesa da Casa" para adicionar condomínio, aluguel, luz, etc.
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {houseExpenses.map((item) => (
-            <Card key={item.id} className="flex items-center justify-between group relative">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-                  style={{ backgroundColor: `${item.color}25`, color: item.color }}
-                >
-                  <Home className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">{item.name}</h4>
-                  <p className="text-xs text-slate-400">
-                    {totalHouseMonth > 0
-                      ? ((item.amount / totalHouseMonth) * 100).toFixed(1)
-                      : 0}
-                    % do custo da casa
-                  </p>
-                </div>
-              </div>
+          {houseExpenses.map((item) => {
+            const IconComponent = (item.categoryIcon && iconMap[item.categoryIcon]) || Home;
+            const color = item.categoryColor || '#3b82f6';
 
-              <div className="flex items-center gap-2">
-                <span className="text-base font-black text-white font-mono">
-                  {formatCurrency(item.amount)}
-                </span>
-                <div className="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleOpenEdit(item)}
-                    className="p-1 rounded text-slate-400 hover:text-blue-400 cursor-pointer"
-                    title="Editar"
+            return (
+              <Card key={item.id} className="flex items-center justify-between group relative">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${color}20`, color }}
                   >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteExpense(item.id)}
-                    className="p-1 rounded text-slate-400 hover:text-rose-400 cursor-pointer"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">{item.name}</h4>
+                    <p className="text-xs text-slate-400">
+                      {totalHouseMonth > 0
+                        ? ((item.amount / totalHouseMonth) * 100).toFixed(1)
+                        : 0}
+                      % do custo da casa
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black text-white font-mono">
+                    {formatCurrency(item.amount)}
+                  </span>
+                  <div className="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleOpenEdit(item)}
+                      className="p-1 rounded text-slate-400 hover:text-blue-400 cursor-pointer"
+                      title="Editar"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteExpense(item.id)}
+                      className="p-1 rounded text-slate-400 hover:text-rose-400 cursor-pointer"
+                      title="Excluir"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -232,7 +322,7 @@ export default function HouseholdPage() {
             <input
               type="text"
               required
-              placeholder="Ex: Gás Encanado, IPTU, Seguro Residencial..."
+              placeholder="Ex: Gás Encanado, IPTU, Seguro Residencial, Condomínio..."
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
@@ -254,6 +344,20 @@ export default function HouseholdPage() {
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Dia de Vencimento
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              value={newDay}
+              onChange={(e) => setNewDay(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
               type="button"
@@ -264,10 +368,11 @@ export default function HouseholdPage() {
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              <span>Salvar Despesa</span>
+              <span>{isSaving ? 'Salvando...' : 'Salvar Despesa'}</span>
             </button>
           </div>
         </form>
@@ -319,10 +424,11 @@ export default function HouseholdPage() {
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer"
+                disabled={isSaving}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                <span>Salvar Alterações</span>
+                <span>{isSaving ? 'Salvando...' : 'Salvar Alterações'}</span>
               </button>
             </div>
           </form>
