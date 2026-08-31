@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
 import { eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
+    await ensureDatabaseSchema();
     const { invoiceId, accountId, paymentDate, amount } = await request.json();
+
+    await db
+      .insert(s.users)
+      .values({
+        id: 'usr_default',
+        name: 'Leonardo C.',
+        email: 'usuario@controlhub.app',
+      })
+      .onConflictDoNothing();
 
     const tDate = new Date(paymentDate + 'T12:00:00');
     const compMonth = tDate.getMonth() + 1;
@@ -46,8 +58,8 @@ export async function POST(request: Request) {
         .where(eq(s.accounts.id, accountId));
     }
 
-    // 3. Atualizar status da fatura para PAID
-    if (invoiceId) {
+    // 3. Atualizar status da fatura para PAID se ID válido existir
+    if (invoiceId && invoiceId !== 'inv_current') {
       await db
         .update(s.invoices)
         .set({

@@ -1,9 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
-import { ShieldCheck, Check } from 'lucide-react';
+import { ShieldCheck, Check, AlertCircle } from 'lucide-react';
+
+interface Account {
+  id: string;
+  name: string;
+  bankName?: string;
+  currentBalance: number;
+}
 
 interface PayInvoiceModalProps {
   isOpen: boolean;
@@ -11,6 +18,7 @@ interface PayInvoiceModalProps {
   invoiceId: string;
   cardName: string;
   amount: number;
+  defaultAccountId?: string;
   onSuccess?: () => void;
 }
 
@@ -20,14 +28,39 @@ export function PayInvoiceModal({
   invoiceId,
   cardName,
   amount,
+  defaultAccountId,
   onSuccess,
 }: PayInvoiceModalProps) {
-  const [accountId, setAccountId] = useState('acc_nubank');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
+  const [fetchingAccounts, setFetchingAccounts] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFetchingAccounts(true);
+      fetch('/api/accounts')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.accounts)) {
+            setAccounts(data.accounts);
+            if (data.accounts.length > 0) {
+              const matched = defaultAccountId && data.accounts.some((a: Account) => a.id === defaultAccountId);
+              setAccountId(matched ? (defaultAccountId as string) : data.accounts[0].id);
+            } else {
+              setAccountId('');
+            }
+          }
+        })
+        .catch((err) => console.error('Erro ao buscar contas:', err))
+        .finally(() => setFetchingAccounts(false));
+    }
+  }, [isOpen, defaultAccountId]);
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!accountId) return;
     setLoading(true);
 
     try {
@@ -85,14 +118,28 @@ export function PayInvoiceModal({
           <label className="block text-xs font-semibold text-slate-300 mb-1">
             Conta Bancária de Saída
           </label>
-          <select
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
-          >
-            <option value="acc_nubank">Conta Nubank (Saldo: R$ 18.450,00)</option>
-            <option value="acc_itau">Itaú Uniclass (Saldo: R$ 14.200,00)</option>
-          </select>
+          {fetchingAccounts ? (
+            <div className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 text-xs">
+              Carregando contas cadastradas...
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Nenhuma conta bancária encontrada. Cadastre uma conta antes de pagar a fatura.</span>
+            </div>
+          ) : (
+            <select
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+            >
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} (Saldo: {formatCurrency(acc.currentBalance)})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div>
@@ -118,8 +165,8 @@ export function PayInvoiceModal({
           </button>
           <button
             type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+            disabled={loading || accounts.length === 0 || !accountId}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>{loading ? 'Processando...' : 'Confirmar Pagamento'}</span>
