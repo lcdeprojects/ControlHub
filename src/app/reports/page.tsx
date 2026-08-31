@@ -11,8 +11,6 @@ export default function ReportsPage() {
 
   const monthlyReport = {
     title: 'Demonstrativo de Resultado — Agosto / 2026',
-    grossIncome: 21450.0,
-    consumptionExpense: 12450.0,
     netSavings: 9000.0,
     savingsRate: 41.95,
     largestCategory: { name: 'Moradia & Condomínio', amount: 3100.0 },
@@ -94,17 +92,15 @@ export default function ReportsPage() {
       <div className="flex p-1 bg-slate-900 rounded-2xl border border-slate-800 w-fit text-xs font-bold">
         <button
           onClick={() => setReportType('MONTHLY')}
-          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            reportType === 'MONTHLY' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
+          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${reportType === 'MONTHLY' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
         >
           Relatório Mensal (Agosto / 2026)
         </button>
         <button
           onClick={() => setReportType('ANNUAL')}
-          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            reportType === 'ANNUAL' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
+          className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${reportType === 'ANNUAL' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
         >
           Relatório Anual Consolidado (2026)
         </button>

@@ -13,6 +13,114 @@ async function addColumnIfNotExists(table: string, column: string, definition: s
   }
 }
 
+async function repairCreditCardsTable() {
+  try {
+    const tableInfo: any = await db.all(sql.raw('PRAGMA table_info(credit_cards)'));
+    const colNames: string[] = Array.isArray(tableInfo) ? tableInfo.map((c: any) => c.name) : [];
+
+    if (colNames.includes('last4_digits')) {
+      // 1. Garante que last_4_digits existe
+      if (!colNames.includes('last_4_digits')) {
+        await addColumnIfNotExists('credit_cards', 'last_4_digits', "TEXT DEFAULT '1234'");
+      }
+      // 2. Copia valores existentes
+      await db.run(sql.raw("UPDATE credit_cards SET last_4_digits = last4_digits WHERE (last_4_digits IS NULL OR last_4_digits = '1234') AND last4_digits IS NOT NULL")).catch(() => {});
+
+      // 3. Tenta remover last4_digits via DROP COLUMN
+      let dropSuccess = false;
+      try {
+        await db.run(sql.raw('ALTER TABLE credit_cards DROP COLUMN last4_digits'));
+        dropSuccess = true;
+      } catch {
+        dropSuccess = false;
+      }
+
+      // Se DROP COLUMN falhou, recria a tabela de forma limpa preservando dados
+      if (!dropSuccess) {
+        await db.run(sql.raw('PRAGMA foreign_keys=OFF'));
+        await db.run(sql.raw(`
+          CREATE TABLE IF NOT EXISTS credit_cards_new (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            default_account_id TEXT REFERENCES accounts(id),
+            name TEXT NOT NULL,
+            brand TEXT NOT NULL DEFAULT 'Mastercard',
+            bank TEXT NOT NULL DEFAULT 'Nubank',
+            last_4_digits TEXT DEFAULT '1234',
+            credit_limit REAL NOT NULL DEFAULT 5000,
+            closing_day INTEGER NOT NULL DEFAULT 3,
+            due_day INTEGER NOT NULL DEFAULT 10,
+            color TEXT DEFAULT '#1e293b',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          );
+        `));
+        await db.run(sql.raw(`
+          INSERT INTO credit_cards_new (id, user_id, default_account_id, name, brand, bank, last_4_digits, credit_limit, closing_day, due_day, color, created_at)
+          SELECT id, user_id, default_account_id, name, brand, bank, COALESCE(last_4_digits, last4_digits, '1234'), credit_limit, closing_day, due_day, color, created_at
+          FROM credit_cards;
+        `));
+        await db.run(sql.raw('DROP TABLE credit_cards'));
+        await db.run(sql.raw('ALTER TABLE credit_cards_new RENAME TO credit_cards'));
+        await db.run(sql.raw('PRAGMA foreign_keys=ON'));
+      }
+    }
+  } catch (err) {
+    console.error('Error repairing credit_cards table:', err);
+  }
+}
+
+async function repairInvoicesTable() {
+  try {
+    const tableInfo: any = await db.all(sql.raw('PRAGMA table_info(invoices)'));
+    const colNames: string[] = Array.isArray(tableInfo) ? tableInfo.map((c: any) => c.name) : [];
+
+    if (colNames.includes('month_year_reference') || colNames.includes('closing_date')) {
+      let dropSuccess = true;
+      try {
+        if (colNames.includes('month_year_reference')) {
+          await db.run(sql.raw('ALTER TABLE invoices DROP COLUMN month_year_reference'));
+        }
+        if (colNames.includes('closing_date')) {
+          await db.run(sql.raw('ALTER TABLE invoices DROP COLUMN closing_date'));
+        }
+      } catch {
+        dropSuccess = false;
+      }
+
+      if (!dropSuccess) {
+        await db.run(sql.raw('PRAGMA foreign_keys=OFF'));
+        await db.run(sql.raw(`
+          CREATE TABLE IF NOT EXISTS invoices_new (
+            id TEXT PRIMARY KEY,
+            credit_card_id TEXT NOT NULL REFERENCES credit_cards(id) ON DELETE CASCADE,
+            reference_month INTEGER NOT NULL,
+            reference_year INTEGER NOT NULL,
+            cycle_start_date TEXT NOT NULL DEFAULT '',
+            cycle_end_date TEXT NOT NULL DEFAULT '',
+            due_date TEXT NOT NULL,
+            total_amount REAL NOT NULL DEFAULT 0,
+            paid_amount REAL NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'OPEN',
+            paid_at TEXT,
+            payment_transaction_id TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          );
+        `));
+        await db.run(sql.raw(`
+          INSERT INTO invoices_new (id, credit_card_id, reference_month, reference_year, due_date, total_amount, paid_amount, status, paid_at, created_at)
+          SELECT id, credit_card_id, reference_month, reference_year, due_date, total_amount, paid_amount, status, paid_at, created_at
+          FROM invoices;
+        `));
+        await db.run(sql.raw('DROP TABLE invoices'));
+        await db.run(sql.raw('ALTER TABLE invoices_new RENAME TO invoices'));
+        await db.run(sql.raw('PRAGMA foreign_keys=ON'));
+      }
+    }
+  } catch (err) {
+    console.error('Error repairing invoices table:', err);
+  }
+}
+
 export async function ensureDatabaseSchema() {
   if (isInitialized) return;
   if (initPromise) return initPromise;
@@ -283,6 +391,10 @@ export async function ensureDatabaseSchema() {
         );
       `);
 
+      // --- Reparos Estruturais para Bancos Legados ---
+      await repairCreditCardsTable();
+      await repairInvoicesTable();
+
       // --- Migrações Incrementais (Garante colunas em bancos já existentes) ---
       // Credit Cards
       await addColumnIfNotExists('credit_cards', 'last_4_digits', "TEXT DEFAULT '1234'");
@@ -293,13 +405,6 @@ export async function ensureDatabaseSchema() {
       await addColumnIfNotExists('credit_cards', 'credit_limit', 'REAL DEFAULT 5000');
       await addColumnIfNotExists('credit_cards', 'closing_day', 'INTEGER DEFAULT 3');
       await addColumnIfNotExists('credit_cards', 'due_day', 'INTEGER DEFAULT 10');
-
-      // Se a tabela credit_cards tinha a coluna antiga 'last4_digits', migramos os valores para 'last_4_digits'
-      try {
-        await db.run(sql.raw('UPDATE credit_cards SET last_4_digits = last4_digits WHERE (last_4_digits IS NULL OR last_4_digits = \'1234\') AND last4_digits IS NOT NULL'));
-      } catch {
-        // Ignora caso a coluna last4_digits não exista
-      }
 
       // Accounts
       await addColumnIfNotExists('accounts', 'bank_name', 'TEXT');
