@@ -92,7 +92,13 @@ export async function GET(request: Request) {
         )
       );
 
-    const pendingHouseholdTotal = recurringList
+    const applicableHouseholdList = recurringList.filter((rec) => {
+      const sYear = rec.startYear || 2026;
+      const sMonth = rec.startMonth || 9;
+      return sYear < year || (sYear === year && sMonth <= month);
+    });
+
+    const pendingHouseholdTotal = applicableHouseholdList
       .filter((rec) => {
         const isPaid = rawTransactions.some(
           (t) =>
@@ -104,7 +110,7 @@ export async function GET(request: Request) {
       })
       .reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-    const totalHouseholdMonth = recurringList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const totalHouseholdMonth = applicableHouseholdList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
     // 6. Investimentos e Bens
     const allInvestments = await db.select().from(s.investments);

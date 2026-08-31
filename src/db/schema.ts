@@ -170,6 +170,8 @@ export const recurringTransactions = sqliteTable('recurring_transactions', {
   accountId: text('account_id').references(() => accounts.id),
   creditCardId: text('credit_card_id').references(() => creditCards.id),
   dayOfMonth: integer('day_of_month').notNull().default(5),
+  startMonth: integer('start_month').notNull().default(9),
+  startYear: integer('start_year').notNull().default(2026),
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
   notes: text('notes'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),

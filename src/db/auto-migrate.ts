@@ -494,8 +494,16 @@ export async function ensureDatabaseSchema() {
       await addColumnIfNotExists('transactions', 'import_batch_id', 'TEXT');
       await addColumnIfNotExists('transactions', 'external_id', 'TEXT');
       await addColumnIfNotExists('transactions', 'source', 'TEXT');
-      await addColumnIfNotExists('transactions', 'is_recurring', 'INTEGER DEFAULT 0');
       await addColumnIfNotExists('transactions', 'notes', 'TEXT');
+
+      // Recurring Transactions
+      await addColumnIfNotExists('recurring_transactions', 'start_month', 'INTEGER DEFAULT 9');
+      await addColumnIfNotExists('recurring_transactions', 'start_year', 'INTEGER DEFAULT 2026');
+
+      // Atualizar itens existentes que foram criados em Setembro para não vazarem retroativamente
+      try {
+        await db.run(sql`UPDATE recurring_transactions SET start_month = 9, start_year = 2026 WHERE start_month IS NULL OR start_month = 0`);
+      } catch {}
 
       // Inserir usuário default e categorias essenciais se não existirem
       await db.insert(s.users).values({

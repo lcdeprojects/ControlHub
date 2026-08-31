@@ -15,12 +15,14 @@ export async function GET(request: Request) {
     const year = parseInt(searchParams.get('year') || '2026', 10);
 
     // 1. Buscar despesas fixas da casa (tabela recurring_transactions)
-    const recurringList = await db
+    const allRecurring = await db
       .select({
         id: s.recurringTransactions.id,
         name: s.recurringTransactions.description,
         amount: s.recurringTransactions.amount,
         dayOfMonth: s.recurringTransactions.dayOfMonth,
+        startMonth: s.recurringTransactions.startMonth,
+        startYear: s.recurringTransactions.startYear,
         accountId: s.recurringTransactions.accountId,
         accountName: s.accounts.name,
         categoryId: s.recurringTransactions.categoryId,
@@ -38,6 +40,13 @@ export async function GET(request: Request) {
           eq(s.recurringTransactions.isActive, true)
         )
       );
+
+    // Filtrar apenas despesas ativas a partir do mês de início cadastrado (não vazar retroativo)
+    const recurringList = allRecurring.filter((rec) => {
+      const sYear = rec.startYear || 2026;
+      const sMonth = rec.startMonth || 9;
+      return sYear < year || (sYear === year && sMonth <= month);
+    });
 
     // 2. Buscar todas as transações do mês para cruzar o status de pagamento
     const monthTransactions = await db
@@ -116,7 +125,15 @@ export async function GET(request: Request) {
         .filter((t) => t.competenceMonth === m && t.competenceYear === y && t.categoryType === 'HOUSEHOLD')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-      const totalForMonth = monthTxAmount > 0 ? monthTxAmount : totalPlanned;
+      const monthPlanned = allRecurring
+        .filter((rec) => {
+          const sYear = rec.startYear || 2026;
+          const sMonth = rec.startMonth || 9;
+          return sYear < y || (sYear === y && sMonth <= m);
+        })
+        .reduce((sum, r) => sum + (r.amount || 0), 0);
+
+      const totalForMonth = monthTxAmount > 0 ? monthTxAmount : monthPlanned;
 
       monthlyHistory.push({
         month: `${monthNames[m - 1]}/${String(y).slice(2)}`,
@@ -150,7 +167,7 @@ export async function POST(request: Request) {
       categoryId = 'cat_moradia',
       accountId,
       debitNow = true,
-      month = 8,
+      month = 9,
       year = 2026,
     } = body;
 
@@ -170,7 +187,7 @@ export async function POST(request: Request) {
     const parsedAmount = typeof amount === 'string' ? parseFloat(amount.replace(',', '.')) : parseFloat(amount);
     const newId = `rec_house_${Date.now()}`;
 
-    // 1. Insere como despesa recorrente da casa
+    // 1. Insere como despesa recorrente da casa gravando o mês e ano de início
     await db.insert(s.recurringTransactions).values({
       id: newId,
       userId: 'usr_default',
@@ -180,6 +197,8 @@ export async function POST(request: Request) {
       categoryId: categoryId || 'cat_moradia',
       accountId: accountId || null,
       dayOfMonth: parseInt(dayOfMonth || '5', 10),
+      startMonth: parseInt(month || '9', 10),
+      startYear: parseInt(year || '2026', 10),
       isActive: true,
     });
 
