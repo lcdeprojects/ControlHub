@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
+import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
+import { normalizeTransactionDescription } from '@/lib/engines/matching-algorithm';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +21,7 @@ export async function GET(request: Request) {
         name: s.recurringTransactions.description,
         amount: s.recurringTransactions.amount,
         dayOfMonth: s.recurringTransactions.dayOfMonth,
+        accountId: s.recurringTransactions.accountId,
         categoryId: s.recurringTransactions.categoryId,
         categoryName: s.categories.name,
         categoryIcon: s.categories.icon,
@@ -91,7 +94,16 @@ export async function POST(request: Request) {
   try {
     await ensureDatabaseSchema();
     const body = await request.json();
-    const { name, amount, dayOfMonth = 5, categoryId } = body;
+    const {
+      name,
+      amount,
+      dayOfMonth = 5,
+      categoryId = 'cat_moradia',
+      accountId,
+      debitNow = true,
+      month = 8,
+      year = 2026,
+    } = body;
 
     if (!name || amount === undefined) {
       return NextResponse.json({ success: false, error: 'Nome e valor são obrigatórios' }, { status: 400 });
@@ -109,7 +121,7 @@ export async function POST(request: Request) {
     const parsedAmount = typeof amount === 'string' ? parseFloat(amount.replace(',', '.')) : parseFloat(amount);
     const newId = `rec_house_${Date.now()}`;
 
-    // Insere como despesa recorrente da casa
+    // 1. Insere como despesa recorrente da casa
     await db.insert(s.recurringTransactions).values({
       id: newId,
       userId: 'usr_default',
@@ -117,9 +129,58 @@ export async function POST(request: Request) {
       amount: parsedAmount,
       type: 'EXPENSE',
       categoryId: categoryId || 'cat_moradia',
+      accountId: accountId || null,
       dayOfMonth: parseInt(dayOfMonth || '5', 10),
       isActive: true,
     });
+
+    // 2. Se o usuário selecionou uma conta bancária e optou por debitar agora
+    if (accountId && debitNow) {
+      const norm = normalizeTransactionDescription(name);
+      const dayStr = String(Math.min(Math.max(parseInt(dayOfMonth || '5', 10), 1), 28)).padStart(2, '0');
+      const monthStr = String(month).padStart(2, '0');
+      const txDate = `${year}-${monthStr}-${dayStr}`;
+
+      const txId = `tx_house_${Date.now()}`;
+      const fp = generateTransactionFingerprint({
+        userId: 'usr_default',
+        sourceId: accountId,
+        transactionDate: txDate,
+        normalizedDescription: norm.normalizedDescription,
+        amount: parsedAmount,
+      });
+
+      // Registra a transação de saída
+      await db.insert(s.transactions).values({
+        id: txId,
+        userId: 'usr_default',
+        accountId,
+        categoryId: categoryId || 'cat_moradia',
+        transactionType: 'EXPENSE',
+        paymentMethod: 'AUTO_DEBIT',
+        description: name,
+        normalizedDescription: norm.normalizedDescription,
+        amount: parsedAmount,
+        transactionDate: txDate,
+        competenceMonth: month,
+        competenceYear: year,
+        billingMonth: month,
+        billingYear: year,
+        fingerprint: fp,
+        isRecurring: true,
+        notes: 'Custo residencial recorrente',
+      });
+
+      // Debita o saldo da conta bancária de saída
+      const acc = (await db.select().from(s.accounts).where(eq(s.accounts.id, accountId)))[0];
+      if (acc) {
+        const newBalance = (acc.currentBalance || 0) - parsedAmount;
+        await db
+          .update(s.accounts)
+          .set({ currentBalance: newBalance })
+          .where(eq(s.accounts.id, accountId));
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -129,6 +190,7 @@ export async function POST(request: Request) {
         amount: parsedAmount,
         dayOfMonth: parseInt(dayOfMonth || '5', 10),
         categoryId: categoryId || 'cat_moradia',
+        accountId,
       },
     });
   } catch (error) {

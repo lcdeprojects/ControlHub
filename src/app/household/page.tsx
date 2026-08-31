@@ -26,6 +26,8 @@ import {
   Trash2,
   Check,
   Tag,
+  Landmark,
+  ShieldCheck,
 } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 
@@ -34,10 +36,17 @@ interface HouseExpense {
   name: string;
   amount: number;
   dayOfMonth?: number;
+  accountId?: string;
   categoryId?: string;
   categoryName?: string;
   categoryIcon?: string;
   categoryColor?: string;
+}
+
+interface Account {
+  id: string;
+  name: string;
+  currentBalance: number;
 }
 
 const iconMap: Record<string, any> = {
@@ -51,9 +60,20 @@ const iconMap: Record<string, any> = {
   tag: Tag,
 };
 
+const householdCategories = [
+  { id: 'cat_moradia', name: 'Moradia / Aluguel', icon: 'home', color: '#6366f1' },
+  { id: 'cat_condominio', name: 'Condomínio', icon: 'building', color: '#8b5cf6' },
+  { id: 'cat_energia', name: 'Energia Elétrica', icon: 'zap', color: '#eab308' },
+  { id: 'cat_agua', name: 'Água & Saneamento', icon: 'droplet', color: '#06b6d4' },
+  { id: 'cat_internet', name: 'Internet & Fibra', icon: 'wifi', color: '#3b82f6' },
+  { id: 'cat_manutencao', name: 'Manutenção da Casa', icon: 'wrench', color: '#64748b' },
+  { id: 'cat_outros', name: 'Outros Custos', icon: 'tag', color: '#94a3b8' },
+];
+
 export default function HouseholdPage() {
   const { month, year } = usePeriod();
   const [houseExpenses, setHouseExpenses] = useState<HouseExpense[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [monthlyHistory, setMonthlyHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,11 +82,15 @@ export default function HouseholdPage() {
   const [newName, setNewName] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newDay, setNewDay] = useState('5');
+  const [newCategoryId, setNewCategoryId] = useState('cat_moradia');
+  const [newAccountId, setNewAccountId] = useState('');
+  const [debitNow, setDebitNow] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const [editingExpense, setEditingExpense] = useState<HouseExpense | null>(null);
   const [editName, setEditName] = useState('');
   const [editAmount, setEditAmount] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('cat_moradia');
 
   const fetchExpenses = async () => {
     try {
@@ -84,8 +108,24 @@ export default function HouseholdPage() {
     }
   };
 
+  const fetchAccounts = async () => {
+    try {
+      const res = await fetch('/api/accounts');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.accounts)) {
+        setAccounts(data.accounts);
+        if (data.accounts.length > 0 && !newAccountId) {
+          setNewAccountId(data.accounts[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao carregar contas bancárias:', err);
+    }
+  };
+
   useEffect(() => {
     fetchExpenses();
+    fetchAccounts();
   }, [month, year]);
 
   const totalHouseMonth = houseExpenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
@@ -103,6 +143,11 @@ export default function HouseholdPage() {
           name: newName,
           amount: newAmount,
           dayOfMonth: newDay,
+          categoryId: newCategoryId,
+          accountId: newAccountId || undefined,
+          debitNow: Boolean(newAccountId && debitNow),
+          month,
+          year,
         }),
       });
 
@@ -113,6 +158,7 @@ export default function HouseholdPage() {
         setNewAmount('');
         setNewDay('5');
         await fetchExpenses();
+        await fetchAccounts();
       }
     } catch (err) {
       console.error('Erro ao adicionar custo da casa:', err);
@@ -125,6 +171,7 @@ export default function HouseholdPage() {
     setEditingExpense(item);
     setEditName(item.name);
     setEditAmount(item.amount.toString());
+    setEditCategoryId(item.categoryId || 'cat_moradia');
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -139,6 +186,7 @@ export default function HouseholdPage() {
         body: JSON.stringify({
           name: editName,
           amount: editAmount,
+          categoryId: editCategoryId,
         }),
       });
 
@@ -183,7 +231,7 @@ export default function HouseholdPage() {
           </div>
           <h2 className="text-2xl font-black text-white mt-1">Custos da Casa</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Controle, edite ou remova despesas residenciais e acompanhe a evolução histórica
+            Controle contas fixas, debite do saldo bancário e acompanhe a evolução histórica
           </p>
         </div>
         <button
@@ -203,7 +251,7 @@ export default function HouseholdPage() {
           </div>
           <div>
             <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-              Total Gasto com a Casa ({formatMonthYear(month, year)})
+              Total Mensal da Casa ({formatMonthYear(month, year)})
             </span>
             <h3 className="text-3xl font-black text-white mt-0.5">
               {formatCurrency(totalHouseMonth)}
@@ -211,7 +259,7 @@ export default function HouseholdPage() {
           </div>
         </div>
         <div className="text-sm text-slate-300">
-          Total de itens cadastrados: <strong>{houseExpenses.length}</strong>
+          Contas cadastradas: <strong>{houseExpenses.length}</strong>
         </div>
       </div>
 
@@ -241,12 +289,16 @@ export default function HouseholdPage() {
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-white">{item.name}</h4>
-                    <p className="text-xs text-slate-400">
-                      {totalHouseMonth > 0
-                        ? ((item.amount / totalHouseMonth) * 100).toFixed(1)
-                        : 0}
-                      % do custo da casa
-                    </p>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>Vencimento dia {item.dayOfMonth || 5}</span>
+                      <span>•</span>
+                      <span>
+                        {totalHouseMonth > 0
+                          ? ((item.amount / totalHouseMonth) * 100).toFixed(1)
+                          : 0}
+                        %
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -312,7 +364,7 @@ export default function HouseholdPage() {
         isOpen={isNewExpenseOpen}
         onClose={() => setIsNewExpenseOpen(false)}
         title="Nova Despesa da Casa"
-        description="Adicione uma conta fixa ou custo residencial."
+        description="Adicione uma conta fixa ou custo residencial e debite da conta bancária."
       >
         <form onSubmit={handleAddExpense} className="space-y-4">
           <div>
@@ -322,41 +374,93 @@ export default function HouseholdPage() {
             <input
               type="text"
               required
-              placeholder="Ex: Gás Encanado, IPTU, Seguro Residencial, Condomínio..."
+              placeholder="Ex: Condomínio, Aluguel, Enel, Sanepar, Internet..."
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Valor Mensal (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              placeholder="0,00"
-              value={newAmount}
-              onChange={(e) => setNewAmount(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Valor Mensal (R$)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                placeholder="0,00"
+                value={newAmount}
+                onChange={(e) => setNewAmount(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Dia de Vencimento
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                value={newDay}
+                onChange={(e) => setNewDay(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Dia de Vencimento
+              Categoria Residencial
             </label>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              value={newDay}
-              onChange={(e) => setNewDay(e.target.value)}
+            <select
+              value={newCategoryId}
+              onChange={(e) => setNewCategoryId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
-            />
+            >
+              {householdCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span>Conta Bancária de Saída</span>
+              <span className="text-[10px] text-slate-400 font-normal">Para debitar saldo</span>
+            </label>
+            <select
+              value={newAccountId}
+              onChange={(e) => setNewAccountId(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+            >
+              <option value="">Não debitar de conta agora (Apenas fixar custo)</option>
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} (Saldo: {formatCurrency(acc.currentBalance)})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {newAccountId && (
+            <label className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl cursor-pointer">
+              <input
+                type="checkbox"
+                checked={debitNow}
+                onChange={(e) => setDebitNow(e.target.checked)}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-0 bg-slate-950 border-slate-700"
+              />
+              <span className="text-xs text-blue-200 font-medium">
+                Debitar imediatamente o valor do saldo da conta no mês atual ({formatMonthYear(month, year)})
+              </span>
+            </label>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button
@@ -384,7 +488,7 @@ export default function HouseholdPage() {
           isOpen={!!editingExpense}
           onClose={() => setEditingExpense(null)}
           title="Editar Despesa da Casa"
-          description="Altere o nome ou valor da despesa residencial."
+          description="Altere o nome, valor ou categoria da despesa residencial."
         >
           <form onSubmit={handleSaveEdit} className="space-y-4">
             <div>
@@ -412,6 +516,23 @@ export default function HouseholdPage() {
                 onChange={(e) => setEditAmount(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Categoria Residencial
+              </label>
+              <select
+                value={editCategoryId}
+                onChange={(e) => setEditCategoryId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              >
+                {householdCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
