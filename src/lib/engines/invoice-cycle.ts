@@ -57,17 +57,13 @@ export function calculateInvoiceCycle(
   const cycleEndDate = `${closingYear}-${String(closingMonth).padStart(2, '0')}-${String(Math.min(closingDay, daysInMonth(closingYear, closingMonth))).padStart(2, '0')}`;
 
   // Determinar mês e ano de vencimento / cobrança (Billing Reference)
-  // Regra padrão de mercado:
-  // Se o dia de vencimento for menor ou igual ao dia de fechamento (ex: fecha dia 25, vence dia 5),
-  // o vencimento é sempre no mês seguinte ao fechamento.
-  // Se o dia de vencimento for maior que o fechamento (ex: fecha dia 3, vence dia 10),
-  // e conforme padrão de referência (Setembro p/ fechamento em Agosto), o vencimento é no mês seguinte ao fechamento.
+  // Regra padrão de mercado de cartões:
+  // Se dueDay > closingDay (ex: fecha dia 03, vence dia 10): O vencimento é no MESMO mês do fechamento (dueMonth = closingMonth).
+  // Se dueDay <= closingDay (ex: fecha dia 25, vence dia 05): O vencimento é no MÊS SEGUINTE ao fechamento (dueMonth = closingMonth + 1).
   let dueMonth = closingMonth;
   let dueYear = closingYear;
 
-  // No ciclo de cartão brasileiro, quando a fatura fecha no dia X do mês, seu vencimento ocorre no mês X+1
-  // ou no mês subsequente para permitir o envio da fatura fechada ao cliente (ex: fecha 03/08 -> vence 10/09).
-  if (dueDay <= closingDay || true) {
+  if (dueDay <= closingDay) {
     dueMonth = closingMonth + 1;
     if (dueMonth > 12) {
       dueMonth = 1;
