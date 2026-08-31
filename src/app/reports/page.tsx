@@ -11,6 +11,8 @@ export default function ReportsPage() {
 
   const monthlyReport = {
     title: 'Demonstrativo de Resultado — Agosto / 2026',
+    grossIncome: 21450.0,
+    consumptionExpense: 12450.0,
     netSavings: 9000.0,
     savingsRate: 41.95,
     largestCategory: { name: 'Moradia & Condomínio', amount: 3100.0 },
@@ -24,8 +26,8 @@ export default function ReportsPage() {
 
   const annualReport = {
     title: 'Balanço Anual Consolidado — 2026',
-    annualIncome: 252000.0,
-    annualExpense: 148200.0,
+    grossIncome: 252000.0,
+    consumptionExpense: 148200.0,
     annualSavings: 103800.0,
     averageSavingsRate: 41.2,
     netWorthEvolution: '+R$ 84.500 (+12.4%)',
@@ -189,13 +191,13 @@ export default function ReportsPage() {
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="text-xs text-slate-400">Receitas Anuais</span>
                 <p className="text-2xl font-black text-emerald-400 mt-1">
-                  {formatCurrency(annualReport.annualIncome)}
+                  {formatCurrency(annualReport.grossIncome)}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="text-xs text-slate-400">Despesas Anuais</span>
                 <p className="text-2xl font-black text-rose-400 mt-1">
-                  {formatCurrency(annualReport.annualExpense)}
+                  {formatCurrency(annualReport.consumptionExpense)}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
