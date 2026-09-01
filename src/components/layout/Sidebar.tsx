@@ -16,10 +16,10 @@ import {
   TrendingUp,
   FileSpreadsheet,
   BarChart3,
-  Settings,
   ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
 
@@ -30,7 +30,7 @@ interface NavItem {
   badge?: string;
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'Transações', href: '/transactions', icon: ArrowLeftRight },
   { label: 'Meus Cartões', href: '/credit-cards', icon: CreditCard },
@@ -47,6 +47,11 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const navItems = user?.role === 'ADMIN'
+    ? [...baseNavItems, { label: 'Painel Admin', href: '/admin', icon: ShieldCheck, badge: 'Admin' }]
+    : baseNavItems;
 
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r border-zinc-800/80 bg-zinc-950/95 p-4 sticky top-0 z-40">
@@ -82,7 +87,12 @@ export function Sidebar() {
                 <span>{item.label}</span>
               </div>
               {item.badge && (
-                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
+                <span className={cn(
+                  'px-2 py-0.5 text-[10px] font-semibold rounded-full border',
+                  item.badge === 'Admin'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                )}>
                   {item.badge}
                 </span>
               )}
@@ -92,17 +102,24 @@ export function Sidebar() {
       </nav>
 
       {/* User Footer Summary */}
-      <div className="mt-auto pt-4 border-t border-zinc-800/80">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900/60 border border-zinc-800">
-          <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-sm text-white shadow-md">
-            LC
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-zinc-200 truncate">Lucas</p>
-            <p className="text-xs text-emerald-400 truncate">● Conectado</p>
+      {user && (
+        <div className="mt-auto pt-4 border-t border-zinc-800/80">
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900/60 border border-zinc-800">
+            <div
+              className="w-9 h-9 rounded-full border border-zinc-700 flex items-center justify-center font-bold text-sm text-white shadow-md"
+              style={{ backgroundColor: user.avatarColor || '#6366f1' }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-zinc-200 truncate">{user.name}</p>
+              <p className="text-xs text-emerald-400 truncate">
+                {user.role === 'ADMIN' ? '● Administrador' : '● Conectado'}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 }

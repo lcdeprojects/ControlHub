@@ -2,14 +2,16 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import * as s from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getAuthUserId(request);
     const { searchParams } = new URL(request.url);
-    const month = parseInt(searchParams.get('month') || '8', 10);
-    const year = parseInt(searchParams.get('year') || '2026', 10);
+    const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1), 10);
+    const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()), 10);
 
     // 1. Fetch budgets for the specified month & year
     const budgetsList = await db
@@ -24,7 +26,7 @@ export async function GET(request: Request) {
       })
       .from(s.budgets)
       .leftJoin(s.categories, eq(s.budgets.categoryId, s.categories.id))
-      .where(and(eq(s.budgets.month, month), eq(s.budgets.year, year)));
+      .where(and(eq(s.budgets.userId, userId), eq(s.budgets.month, month), eq(s.budgets.year, year)));
 
     // 2. Fetch transactions to calculate spent per category
     const rawTransactions = await db
@@ -37,7 +39,8 @@ export async function GET(request: Request) {
         billingMonth: s.transactions.billingMonth,
         billingYear: s.transactions.billingYear,
       })
-      .from(s.transactions);
+      .from(s.transactions)
+      .where(eq(s.transactions.userId, userId));
 
     // Sum expenses by categoryId
     const spentMap: Record<string, number> = {};
@@ -77,6 +80,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthUserId(request);
     const body = await request.json();
     const { categoryId, limitAmount, month, year } = body;
 
@@ -84,17 +88,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'categoryId and limitAmount are required' }, { status: 400 });
     }
 
-    const m = month !== undefined ? parseInt(String(month), 10) : 8;
-    const y = year !== undefined ? parseInt(String(year), 10) : 2026;
-
-    await db
-      .insert(s.users)
-      .values({
-        id: 'usr_default',
-        name: 'Usuário',
-        email: 'usuario@controlhub.app',
-      })
-      .onConflictDoNothing();
+    const m = month !== undefined ? parseInt(String(month), 10) : new Date().getMonth() + 1;
+    const y = year !== undefined ? parseInt(String(year), 10) : new Date().getFullYear();
 
     // Check if budget for this category, month, and year already exists
     const existing = await db
@@ -102,7 +97,7 @@ export async function POST(request: Request) {
       .from(s.budgets)
       .where(
         and(
-          eq(s.budgets.userId, 'usr_default'),
+          eq(s.budgets.userId, userId),
           eq(s.budgets.categoryId, categoryId),
           eq(s.budgets.month, m),
           eq(s.budgets.year, y)
@@ -124,7 +119,7 @@ export async function POST(request: Request) {
     const id = `bud_${Date.now()}`;
     const newBudget = {
       id,
-      userId: 'usr_default',
+      userId,
       categoryId,
       limitAmount: parseFloat(String(limitAmount)),
       month: m,

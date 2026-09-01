@@ -4,14 +4,16 @@ import * as s from '@/db/schema';
 import { calculateFinancialSummary } from '@/lib/engines/financial-calculator';
 import { eq, and } from 'drizzle-orm';
 import { getShortMonth } from '@/lib/utils';
+import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getAuthUserId(request);
     const { searchParams } = new URL(request.url);
-    const month = parseInt(searchParams.get('month') || '8', 10);
-    const year = parseInt(searchParams.get('year') || '2026', 10);
+    const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1), 10);
+    const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()), 10);
 
     // Mês anterior
     let prevMonth = month - 1;
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
     }
 
     // 1. Saldo Disponível Consolidado em Contas
-    const userAccounts = await db.select().from(s.accounts);
+    const userAccounts = await db.select().from(s.accounts).where(eq(s.accounts.userId, userId));
     const availableBalance = userAccounts.reduce((acc, a) => acc + (a.currentBalance || 0), 0);
 
     // 2. Transações do Usuário com Categorias
@@ -50,7 +52,8 @@ export async function GET(request: Request) {
         externalId: s.transactions.externalId,
       })
       .from(s.transactions)
-      .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id));
+      .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id))
+      .where(eq(s.transactions.userId, userId));
 
     // 3. Faturas e Gastos de Cartão do Mês Selecionado e Próximo Mês
     const currentInvoicesTotal = rawTransactions
@@ -72,7 +75,17 @@ export async function GET(request: Request) {
       .reduce((acc, curr) => acc + curr.amount, 0);
 
     // 4. Parcelas Futuras Ainda Não Quitadas a partir do mês selecionado
-    const allInstallments = await db.select().from(s.installments);
+    const allInstallments = await db
+      .select({
+        amount: s.installments.amount,
+        status: s.installments.status,
+        billingYear: s.installments.billingYear,
+        billingMonth: s.installments.billingMonth,
+      })
+      .from(s.installments)
+      .leftJoin(s.installmentPurchases, eq(s.installments.installmentPurchaseId, s.installmentPurchases.id))
+      .where(eq(s.installmentPurchases.userId, userId));
+
     const futureInstallmentsTotal = allInstallments
       .filter(
         (inst) =>
@@ -87,7 +100,7 @@ export async function GET(request: Request) {
       .from(s.recurringTransactions)
       .where(
         and(
-          eq(s.recurringTransactions.userId, 'usr_default'),
+          eq(s.recurringTransactions.userId, userId),
           eq(s.recurringTransactions.isActive, true)
         )
       );

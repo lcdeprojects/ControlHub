@@ -1,6 +1,7 @@
 import { db } from './index';
 import * as s from './schema';
 import { sql, eq } from 'drizzle-orm';
+import crypto from 'crypto';
 
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
@@ -505,11 +506,60 @@ export async function ensureDatabaseSchema() {
         await db.run(sql`UPDATE recurring_transactions SET start_month = 9, start_year = 2026 WHERE start_month IS NULL OR start_month = 0`);
       } catch {}
 
+      // Users & Sessions
+      await addColumnIfNotExists('users', 'pin_hash', 'TEXT');
+      await addColumnIfNotExists('users', 'avatar_color', "TEXT DEFAULT '#6366f1'");
+      await addColumnIfNotExists('users', 'role', "TEXT DEFAULT 'USER'");
+      await db.run(sql`
+        CREATE TABLE IF NOT EXISTS sessions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          expires_at TEXT NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `).catch(() => {});
+
+      // Inserir/Atualizar Usuário Administrador lucasconto
+      const adminPinHash = crypto.createHash('sha256').update('controlhub_salt_Senha@123').digest('hex');
+      try {
+        await db.insert(s.users).values({
+          id: 'usr_admin_lucas',
+          name: 'Lucas Conto',
+          email: 'lucasconto@controlhub.app',
+          pinHash: adminPinHash,
+          avatarColor: '#10b981',
+          role: 'ADMIN',
+        }).onConflictDoNothing();
+
+        await db.run(sql`
+          UPDATE users 
+          SET role = 'ADMIN', pin_hash = ${adminPinHash} 
+          WHERE email = 'lucasconto@controlhub.app' OR email = 'lucasconto' OR id = 'usr_admin_lucas'
+        `);
+
+        // Migrar dados existentes do usuário legado (usr_default) para o administrador lucasconto
+        await db.run(sql`UPDATE accounts SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE credit_cards SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE categories SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default' AND (is_system IS NULL OR is_system = 0)`);
+        await db.run(sql`UPDATE merchants SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE installment_purchases SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE transactions SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE transfers SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE recurring_transactions SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE budgets SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+        await db.run(sql`UPDATE investments SET user_id = 'usr_admin_lucas' WHERE user_id = 'usr_default'`);
+      } catch (err) {
+        console.error('Error seeding admin user / migrating data:', err);
+      }
+
       // Inserir usuário default e categorias essenciais se não existirem
       await db.insert(s.users).values({
         id: 'usr_default',
         name: 'Leonardo C.',
         email: 'leonardo@controlhub.app',
+        pinHash: '1234',
+        avatarColor: '#6366f1',
+        role: 'USER',
       }).onConflictDoNothing();
 
       const defaultCategories = [

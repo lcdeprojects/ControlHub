@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await ensureDatabaseSchema();
-    const list = await db.select().from(s.accounts);
+    const userId = await getAuthUserId(request);
+    const list = await db.select().from(s.accounts).where(eq(s.accounts.userId, userId));
     return NextResponse.json({ success: true, accounts: list });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
@@ -18,24 +20,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const userId = await getAuthUserId(request);
     const body = await request.json();
     const { name, type, bankName, initialBalance = 0, color = '#3b82f6' } = body;
-
-    // Garante que o usuário padrão exista
-    await db
-      .insert(s.users)
-      .values({
-        id: 'usr_default',
-        name: 'Usuário',
-        email: 'usuario@controlhub.app',
-      })
-      .onConflictDoNothing();
 
     const parsedBalance = parseFloat(initialBalance || 0);
     const accId = `acc_${Date.now()}`;
     const newAcc = {
       id: accId,
-      userId: 'usr_default',
+      userId,
       name,
       type,
       bankName: bankName || name,
@@ -50,7 +43,7 @@ export async function POST(request: Request) {
     // Audit log
     await db.insert(s.auditLogs).values({
       id: `aud_${Date.now()}`,
-      userId: 'usr_default',
+      userId,
       entityType: 'ACCOUNT',
       entityId: accId,
       action: 'CREATE',

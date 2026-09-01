@@ -6,17 +6,20 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { formatMonthYear } from '@/lib/utils';
 import { QuickActionModal } from '../dashboard/QuickActionModal';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
 import { ControlHubLogo } from '../ui/ControlHubLogo';
 
 export function Header() {
   const { month, year, nextMonth, prevMonth } = usePeriod();
+  const { user, logout } = useAuth();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   return (
@@ -51,8 +54,8 @@ export function Header() {
           </div>
         </div>
 
-        {/* Global Actions */}
-        <div className="flex items-center">
+        {/* Global Actions & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setIsQuickActionOpen(true)}
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all duration-200 active:scale-95 cursor-pointer"
@@ -61,6 +64,37 @@ export function Header() {
             <span className="hidden xs:inline">Novo Lançamento</span>
             <span className="xs:hidden">Novo</span>
           </button>
+
+          {/* Active User Badge & Logout */}
+          {user ? (
+            <div className="flex items-center gap-2 pl-2 border-l border-zinc-800">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                style={{ backgroundColor: user.avatarColor || '#6366f1' }}
+                title={user.name}
+              >
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-xs font-semibold text-zinc-200 leading-none">{user.name}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-red-500/50 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-all cursor-pointer"
+                title="Encerrar Sessão / Trocar de Perfil"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs text-zinc-300 transition-all"
+            >
+              <UserIcon className="w-4 h-4" />
+              <span>Entrar</span>
+            </Link>
+          )}
         </div>
       </header>
 

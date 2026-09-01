@@ -6,6 +6,17 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
+  pinHash: text('pin_hash'),
+  avatarColor: text('avatar_color').default('#6366f1'),
+  role: text('role').$type<'ADMIN' | 'USER'>().default('USER'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// 1b. Sessions
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

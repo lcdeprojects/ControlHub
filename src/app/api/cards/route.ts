@@ -2,15 +2,17 @@ import { NextResponse } from 'next/server';
 import { db, ensureDatabaseSchema } from '@/db';
 import * as s from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const userId = await getAuthUserId(request);
     const { searchParams } = new URL(request.url);
-    const month = parseInt(searchParams.get('month') || '8', 10);
-    const year = parseInt(searchParams.get('year') || '2026', 10);
+    const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1), 10);
+    const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()), 10);
 
     let nextMonth = month + 1;
     let nextYear = year;
@@ -19,8 +21,8 @@ export async function GET(request: Request) {
       nextYear += 1;
     }
 
-    const cards = await db.select().from(s.creditCards);
-    const transactions = await db.select().from(s.transactions);
+    const cards = await db.select().from(s.creditCards).where(eq(s.creditCards.userId, userId));
+    const transactions = await db.select().from(s.transactions).where(eq(s.transactions.userId, userId));
 
     const enrichedCards = cards.map((card) => {
       const cardTx = transactions.filter((t) => t.creditCardId === card.id);
@@ -78,6 +80,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const userId = await getAuthUserId(request);
     const body = await request.json();
     const {
       name,
@@ -91,19 +94,10 @@ export async function POST(request: Request) {
       color = '#18181b',
     } = body;
 
-    await db
-      .insert(s.users)
-      .values({
-        id: 'usr_default',
-        name: 'Leonardo C.',
-        email: 'usuario@controlhub.app',
-      })
-      .onConflictDoNothing();
-
     const cardId = `card_${Date.now()}`;
     const newCard = {
       id: cardId,
-      userId: 'usr_default',
+      userId,
       defaultAccountId: defaultAccountId || null,
       name,
       bank,
@@ -119,7 +113,7 @@ export async function POST(request: Request) {
 
     await db.insert(s.auditLogs).values({
       id: `aud_${Date.now()}`,
-      userId: 'usr_default',
+      userId,
       entityType: 'CREDIT_CARD',
       entityId: cardId,
       action: 'CREATE',

@@ -4,15 +4,17 @@ import * as s from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
 import { normalizeTransactionDescription } from '@/lib/engines/matching-algorithm';
+import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const userId = await getAuthUserId(request);
     const { searchParams } = new URL(request.url);
-    const month = parseInt(searchParams.get('month') || '8', 10);
-    const year = parseInt(searchParams.get('year') || '2026', 10);
+    const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1), 10);
+    const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()), 10);
 
     // 1. Buscar despesas fixas da casa (tabela recurring_transactions)
     const allRecurring = await db
@@ -36,15 +38,15 @@ export async function GET(request: Request) {
       .leftJoin(s.accounts, eq(s.recurringTransactions.accountId, s.accounts.id))
       .where(
         and(
-          eq(s.recurringTransactions.userId, 'usr_default'),
+          eq(s.recurringTransactions.userId, userId),
           eq(s.recurringTransactions.isActive, true)
         )
       );
 
     // Filtrar apenas despesas ativas a partir do mês de início cadastrado (não vazar retroativo)
     const recurringList = allRecurring.filter((rec) => {
-      const sYear = rec.startYear || 2026;
-      const sMonth = rec.startMonth || 9;
+      const sYear = rec.startYear || new Date().getFullYear();
+      const sMonth = rec.startMonth || new Date().getMonth() + 1;
       return sYear < year || (sYear === year && sMonth <= month);
     });
 
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
       .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id))
       .where(
         and(
-          eq(s.transactions.userId, 'usr_default'),
+          eq(s.transactions.userId, userId),
           eq(s.transactions.competenceMonth, month),
           eq(s.transactions.competenceYear, year)
         )
@@ -159,30 +161,22 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const userId = await getAuthUserId(request);
     const body = await request.json();
     const {
       name,
       amount,
       dayOfMonth = 5,
-      categoryId = 'cat_moradia',
+      categoryId,
       accountId,
       debitNow = true,
-      month = 9,
-      year = 2026,
+      month = new Date().getMonth() + 1,
+      year = new Date().getFullYear(),
     } = body;
 
     if (!name || amount === undefined) {
       return NextResponse.json({ success: false, error: 'Nome e valor são obrigatórios' }, { status: 400 });
     }
-
-    await db
-      .insert(s.users)
-      .values({
-        id: 'usr_default',
-        name: 'Leonardo C.',
-        email: 'usuario@controlhub.app',
-      })
-      .onConflictDoNothing();
 
     const parsedAmount = typeof amount === 'string' ? parseFloat(amount.replace(',', '.')) : parseFloat(amount);
     const newId = `rec_house_${Date.now()}`;
@@ -190,15 +184,15 @@ export async function POST(request: Request) {
     // 1. Insere como despesa recorrente da casa gravando o mês e ano de início
     await db.insert(s.recurringTransactions).values({
       id: newId,
-      userId: 'usr_default',
+      userId,
       description: name,
       amount: parsedAmount,
       type: 'EXPENSE',
       categoryId: categoryId || 'cat_moradia',
       accountId: accountId || null,
       dayOfMonth: parseInt(dayOfMonth || '5', 10),
-      startMonth: parseInt(month || '9', 10),
-      startYear: parseInt(year || '2026', 10),
+      startMonth: parseInt(month || String(new Date().getMonth() + 1), 10),
+      startYear: parseInt(year || String(new Date().getFullYear()), 10),
       isActive: true,
     });
 
@@ -211,7 +205,7 @@ export async function POST(request: Request) {
 
       const txId = `tx_house_${Date.now()}`;
       const fp = generateTransactionFingerprint({
-        userId: 'usr_default',
+        userId,
         sourceId: accountId,
         transactionDate: txDate,
         normalizedDescription: norm.normalizedDescription,
@@ -221,7 +215,7 @@ export async function POST(request: Request) {
       // Registra a transação de saída
       await db.insert(s.transactions).values({
         id: txId,
-        userId: 'usr_default',
+        userId,
         accountId,
         categoryId: categoryId || 'cat_moradia',
         transactionType: 'EXPENSE',

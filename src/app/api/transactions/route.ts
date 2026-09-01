@@ -6,12 +6,14 @@ import { normalizeTransactionDescription } from '@/lib/engines/matching-algorith
 import { calculateInvoiceCycle } from '@/lib/engines/invoice-cycle';
 import { generateInstallments } from '@/lib/engines/installment-engine';
 import { eq, desc } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const userId = await getAuthUserId(request);
     const list = await db
       .select({
         id: s.transactions.id,
@@ -34,6 +36,7 @@ export async function GET() {
       .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id))
       .leftJoin(s.accounts, eq(s.transactions.accountId, s.accounts.id))
       .leftJoin(s.creditCards, eq(s.transactions.creditCardId, s.creditCards.id))
+      .where(eq(s.transactions.userId, userId))
       .orderBy(desc(s.transactions.transactionDate));
 
     return NextResponse.json({ success: true, transactions: list });
@@ -45,6 +48,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await ensureDatabaseSchema();
+    const authUserId = await getAuthUserId(request);
     const body = await request.json();
     const {
       type,
@@ -56,18 +60,8 @@ export async function POST(request: Request) {
       accountId,
       categoryId,
       installmentCount = 1,
-      userId = 'usr_default',
+      userId = authUserId,
     } = body;
-
-    // 1. Garantir que o usuário default exista no banco
-    await db
-      .insert(s.users)
-      .values({
-        id: userId,
-        name: 'Usuário',
-        email: 'usuario@controlhub.app',
-      })
-      .onConflictDoNothing();
 
     // 2. Validar se a categoria existe
     let validCategoryId = categoryId || null;
