@@ -108,26 +108,30 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    // Exclusão em cascata de todos os registros vinculados ao usuário
-    await db.run(sql`DELETE FROM audit_logs WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM merchant_rules WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM import_batches WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM budgets WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM recurring_transactions WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM transfers WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM investments WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM transactions WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM installments WHERE installment_purchase_id IN (SELECT id FROM installment_purchases WHERE user_id = ${userId})`);
-    await db.run(sql`DELETE FROM installment_purchases WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM invoices WHERE credit_card_id IN (SELECT id FROM credit_cards WHERE user_id = ${userId})`);
-    await db.run(sql`DELETE FROM credit_cards WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM accounts WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM merchants WHERE user_id = ${userId}`);
-    await db.run(sql`DELETE FROM categories WHERE user_id = ${userId} AND (is_system IS NULL OR is_system = 0)`);
-    await db.run(sql`DELETE FROM sessions WHERE user_id = ${userId}`);
+    // Desativar temporariamente verificações de FK para permitir a exclusão em cascata completa sem travamentos circulares
+    try {
+      await db.run(sql`PRAGMA foreign_keys = OFF`);
 
-    // Excluir a conta de usuário
-    await db.delete(s.users).where(eq(s.users.id, userId));
+      await db.run(sql`DELETE FROM audit_logs WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM merchant_rules WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM import_batches WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM budgets WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM recurring_transactions WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM transfers WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM investments WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM transactions WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM installments WHERE installment_purchase_id IN (SELECT id FROM installment_purchases WHERE user_id = ${userId})`);
+      await db.run(sql`DELETE FROM installment_purchases WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM invoices WHERE credit_card_id IN (SELECT id FROM credit_cards WHERE user_id = ${userId})`);
+      await db.run(sql`DELETE FROM credit_cards WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM accounts WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM merchants WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM categories WHERE user_id = ${userId} AND (is_system IS NULL OR is_system = 0)`);
+      await db.run(sql`DELETE FROM sessions WHERE user_id = ${userId}`);
+      await db.run(sql`DELETE FROM users WHERE id = ${userId}`);
+    } finally {
+      await db.run(sql`PRAGMA foreign_keys = ON`);
+    }
 
     return NextResponse.json({
       success: true,
