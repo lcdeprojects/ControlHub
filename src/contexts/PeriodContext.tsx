@@ -14,8 +14,8 @@ interface PeriodContextType {
 const PeriodContext = createContext<PeriodContextType | undefined>(undefined);
 
 export function PeriodProvider({ children }: { children: React.ReactNode }) {
-  const [month, setMonth] = useState(8); // Padrão Agosto
-  const [year, setYear] = useState(2026);
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
+  const [year, setYear] = useState(() => new Date().getFullYear());
 
   const setPeriod = (newM: number, newY: number) => {
     setMonth(newM);
