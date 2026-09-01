@@ -10,6 +10,8 @@ export interface ColumnMappingConfig {
   amountCol: string;
   categoryCol?: string;
   typeCol?: string;
+  installmentCol?: string;
+  cardLast4Col?: string;
 }
 
 export function parseRawSpreadsheet(
@@ -24,6 +26,7 @@ export function parseRawSpreadsheet(
       header: true,
       skipEmptyLines: true,
       dynamicTyping: false,
+      delimitersToGuess: [';', ',', '\t', '|'],
     });
     return parsed.data as Record<string, any>[];
   } else {
@@ -38,16 +41,34 @@ export function parseRawSpreadsheet(
 
 /**
  * Detecta automaticamente colunas comuns em extratos de bancos brasileiros
- * (Nubank, Itaú, Bradesco, Santander, Inter, C6, BTG, BB, etc.)
+ * (C6 Bank, Nubank, Itaú, Bradesco, Santander, Inter, BTG, BB, etc.)
  */
 export function autoDetectColumns(sampleRow: Record<string, any>): ColumnMappingConfig {
   const keys = Object.keys(sampleRow);
 
-  let dateCol = keys.find(k => /data|date|dt_transacao|dt_compra/i.test(k)) || keys[0] || '';
-  let descriptionCol = keys.find(k => /descri[cç][aã]o|historico|estabelecimento|merchant|titulo|memo/i.test(k)) || keys[1] || '';
-  let amountCol = keys.find(k => /valor|amount|valor_brl|quantia|vlr/i.test(k)) || keys[2] || '';
+  let dateCol =
+    keys.find(k => /valor \(em r\$\)|data de compra|dt_compra|data_compra|data|date|dt_transacao/i.test(k) && /data/i.test(k)) ||
+    keys.find(k => /data|date/i.test(k)) ||
+    keys[0] ||
+    '';
+
+  let descriptionCol =
+    keys.find(k => /descri[cç][aã]o|historico|estabelecimento|merchant|titulo|memo/i.test(k)) ||
+    keys[1] ||
+    '';
+
+  // Prioriza "Valor (em R$)" (padrão C6 Bank) para não confundir com "Valor (em US$)"
+  let amountCol =
+    keys.find(k => /valor \(em r\$\)|valor_brl|valor \(brl\)/i.test(k)) ||
+    keys.find(k => /^valor$/i.test(k)) ||
+    keys.find(k => /valor|amount|quantia|vlr/i.test(k)) ||
+    keys[2] ||
+    '';
+
   let categoryCol = keys.find(k => /categoria|category|classificacao/i.test(k));
   let typeCol = keys.find(k => /tipo|type|d_c|debito_credito/i.test(k));
+  let installmentCol = keys.find(k => /^parcela$/i.test(k) || /parcela/i.test(k));
+  let cardLast4Col = keys.find(k => /final do cart[aã]o|cartao|final/i.test(k));
 
   return {
     dateCol,
@@ -55,6 +76,8 @@ export function autoDetectColumns(sampleRow: Record<string, any>): ColumnMapping
     amountCol,
     categoryCol,
     typeCol,
+    installmentCol,
+    cardLast4Col,
   };
 }
 
@@ -87,7 +110,30 @@ export function processImportRows(
 
     const norm = normalizeTransactionDescription(String(rawDesc));
     const amountVal = Math.abs(cleanAmount);
-    const type: 'DEBIT' | 'CREDIT' = cleanAmount < 0 ? 'DEBIT' : 'CREDIT';
+    const type: 'DEBIT' | 'CREDIT' = cleanAmount < 0 ? 'CREDIT' : 'DEBIT';
+
+    let currentInstallment = norm.currentInstallment;
+    let totalInstallments = norm.totalInstallments;
+    let isInstallment = norm.isInstallmentPattern;
+
+    // Se o extrato possui coluna dedicada "Parcela" (ex: C6 Bank "12/12", "8/10", "Única")
+    if (mapping.installmentCol && row[mapping.installmentCol]) {
+      const rawInstStr = String(row[mapping.installmentCol]).trim();
+      const instMatch = rawInstStr.match(/^(\d{1,2})\s*[\/|\\]\s*(\d{1,2})$/);
+      if (instMatch) {
+        const cur = parseInt(instMatch[1], 10);
+        const tot = parseInt(instMatch[2], 10);
+        if (tot > 1 && cur >= 1 && cur <= tot) {
+          currentInstallment = cur;
+          totalInstallments = tot;
+          isInstallment = true;
+        }
+      } else if (/única|unica|1\/1/i.test(rawInstStr)) {
+        isInstallment = false;
+        currentInstallment = undefined;
+        totalInstallments = undefined;
+      }
+    }
 
     // Gerar Fingerprint determinístico
     const fingerprint = generateTransactionFingerprint({
@@ -96,14 +142,14 @@ export function processImportRows(
       transactionDate: cleanDate,
       normalizedDescription: norm.normalizedDescription,
       amount: amountVal,
-      installmentNumber: norm.currentInstallment || 0,
+      installmentNumber: currentInstallment || 0,
     });
 
     const isDuplicate = existingFingerprints.has(fingerprint);
 
     // Calcular Match Score se for padrão de parcela
     let matchScoreResult: ImportParsedRow['matchScore'];
-    if (norm.isInstallmentPattern && existingPurchases.length > 0) {
+    if (isInstallment && existingPurchases.length > 0) {
       let bestMatch: ImportParsedRow['matchScore'];
       for (const candidate of existingPurchases) {
         const scoreRes = calculateMatchScore(
@@ -111,8 +157,8 @@ export function processImportRows(
             creditCardId: targetCardId,
             normalizedDescription: norm.normalizedDescription,
             amount: amountVal,
-            currentInstallment: norm.currentInstallment,
-            totalInstallments: norm.totalInstallments,
+            currentInstallment,
+            totalInstallments,
           },
           candidate
         );
@@ -131,9 +177,9 @@ export function processImportRows(
       rawCategory: mapping.categoryCol ? String(row[mapping.categoryCol] || '') : undefined,
       normalizedDescription: norm.normalizedDescription,
       merchantName: norm.merchantName,
-      currentInstallment: norm.currentInstallment,
-      totalInstallments: norm.totalInstallments,
-      isInstallment: norm.isInstallmentPattern,
+      currentInstallment,
+      totalInstallments,
+      isInstallment,
       fingerprint,
       matchScore: matchScoreResult,
       isDuplicate,

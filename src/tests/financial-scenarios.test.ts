@@ -4,6 +4,7 @@ import { generateInstallments } from '../lib/engines/installment-engine';
 import { calculateMatchScore } from '../lib/engines/matching-algorithm';
 import { generateTransactionFingerprint } from '../lib/engines/fingerprint';
 import { calculateFinancialSummary } from '../lib/engines/financial-calculator';
+import { parseRawSpreadsheet, autoDetectColumns, processImportRows } from '../lib/engines/import-parser';
 import { formatDate } from '../lib/utils';
 import { RawTransactionItem } from '../lib/types';
 
@@ -207,5 +208,49 @@ describe('Utilitário formatDate (Tratamento de Datas do Banco)', () => {
     expect(formatDate('2026-09-01T09:44:11.000Z')).toBe('01/09/2026');
     expect(formatDate('')).toBe('-');
     expect(formatDate('data_invalida')).toBe('-');
+  });
+});
+
+describe('Importador de Extrato C6 Bank (CSV com Ponto e Vírgula)', () => {
+  it('Detecta colunas do C6 Bank, interpreta parcelas e extrai lançamentos com sucesso', () => {
+    const c6CsvContent = `Data de Compra;Nome no Cartão;Final do Cartão;Categoria;Descrição;Parcela;Valor (em US$);Cotação (em R$);Valor (em R$)
+10/07/2026;LUCAS CONTO;2852;-;"Inclusao de Pagamento    ";Única;0;0;-9189.09
+28/08/2025;LUCAS CONTO;6045;Especialidade varejo;MERCADOLIVRE*VINIJOIA;12/12;0;0;73.91
+03/07/2026;LUCAS CONTO;6045;Entretenimento;GOOGLE *GOOGLE ONE     MO;Única;5.29;5.47;28.92`;
+
+    const encoder = new TextEncoder();
+    const buffer = encoder.encode(c6CsvContent);
+
+    const rawRows = parseRawSpreadsheet(buffer, 'fatura_c6bank.csv');
+    expect(rawRows.length).toBe(3);
+
+    const mapping = autoDetectColumns(rawRows[0]);
+    expect(mapping.dateCol).toBe('Data de Compra');
+    expect(mapping.descriptionCol).toBe('Descrição');
+    expect(mapping.amountCol).toBe('Valor (em R$)');
+    expect(mapping.installmentCol).toBe('Parcela');
+
+    const processed = processImportRows(rawRows, mapping, 'usr_test_c6');
+    expect(processed.length).toBe(3);
+
+    // Linha 1: Pagamento / Estorno
+    expect(processed[0].description).toBe('Inclusao de Pagamento');
+    expect(processed[0].amount).toBe(9189.09);
+    expect(processed[0].type).toBe('CREDIT');
+    expect(processed[0].isInstallment).toBe(false);
+
+    // Linha 2: Compra Parcelada 12/12
+    expect(processed[1].description).toBe('MERCADOLIVRE*VINIJOIA');
+    expect(processed[1].amount).toBe(73.91);
+    expect(processed[1].type).toBe('DEBIT');
+    expect(processed[1].isInstallment).toBe(true);
+    expect(processed[1].currentInstallment).toBe(12);
+    expect(processed[1].totalInstallments).toBe(12);
+
+    // Linha 3: Compra Única em Moeda Estrangeira (convertida para R$)
+    expect(processed[2].description).toBe('GOOGLE *GOOGLE ONE     MO');
+    expect(processed[2].amount).toBe(28.92);
+    expect(processed[2].type).toBe('DEBIT');
+    expect(processed[2].isInstallment).toBe(false);
   });
 });
