@@ -126,7 +126,7 @@ export async function GET(request: Request) {
     const totalHouseholdMonth = applicableHouseholdList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
     // 6. Investimentos e Bens
-    const allInvestments = await db.select().from(s.investments);
+    const allInvestments = await db.select().from(s.investments).where(eq(s.investments.userId, userId));
     const totalInvestments = allInvestments.reduce((acc, curr) => acc + (curr.currentValue || 0), 0);
     
     // Passivos e Obrigações Totais: Faturas do mês + Parcelas futuras + Custos da casa pendentes no mês

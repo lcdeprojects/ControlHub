@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import * as s from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId(request);
     const { id } = await params;
     const body = await request.json();
     const { name, type, investedAmount, currentValue, institution, notes } = body;
 
     const existing = (
-      await db.select().from(s.investments).where(eq(s.investments.id, id))
+      await db.select().from(s.investments).where(and(eq(s.investments.id, id), eq(s.investments.userId, userId)))
     )[0];
 
     if (!existing) {
@@ -31,11 +33,11 @@ export async function PUT(
         notes: notes !== undefined ? notes : existing.notes,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(s.investments.id, id));
+      .where(and(eq(s.investments.id, id), eq(s.investments.userId, userId)));
 
     await db.insert(s.auditLogs).values({
       id: `aud_${Date.now()}`,
-      userId: existing.userId,
+      userId,
       entityType: 'INVESTMENT',
       entityId: id,
       action: 'UPDATE',
@@ -54,21 +56,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId(request);
     const { id } = await params;
 
     const existing = (
-      await db.select().from(s.investments).where(eq(s.investments.id, id))
+      await db.select().from(s.investments).where(and(eq(s.investments.id, id), eq(s.investments.userId, userId)))
     )[0];
 
     if (!existing) {
       return NextResponse.json({ success: false, error: 'Investimento não encontrado.' }, { status: 404 });
     }
 
-    await db.delete(s.investments).where(eq(s.investments.id, id));
+    await db.delete(s.investments).where(and(eq(s.investments.id, id), eq(s.investments.userId, userId)));
 
     await db.insert(s.auditLogs).values({
       id: `aud_${Date.now()}`,
-      userId: existing.userId,
+      userId,
       entityType: 'INVESTMENT',
       entityId: id,
       action: 'DELETE',
