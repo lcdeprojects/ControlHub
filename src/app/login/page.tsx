@@ -9,7 +9,6 @@ export default function LoginPage() {
   const { user, login } = useAuth();
   const router = useRouter();
 
-  const [usersList, setUsersList] = useState<any[]>([]);
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,25 +20,6 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  useEffect(() => {
-    fetch('/api/users')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setUsersList(data);
-          if (data.length > 0 && !email) {
-            setEmail(data[0].email);
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleSelectUser = (u: any) => {
-    setEmail(u.email);
-    setError('');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -48,7 +28,7 @@ export default function LoginPage() {
     try {
       const res = await login(email, pin);
       if (!res.success) {
-        setError(res.error || 'Erro ao realizar login');
+        setError(res.error || 'Usuário ou senha incorretos');
       }
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro ao conectar');
@@ -75,43 +55,6 @@ export default function LoginPage() {
           <h2 className="text-base font-semibold text-white">Acesse sua Conta</h2>
         </div>
 
-        {/* User Quick Switch Grid */}
-        {usersList.length > 0 && (
-          <div className="mb-6">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
-              Selecione seu perfil:
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {usersList.map((u) => {
-                const isSelected = email.toLowerCase() === u.email.toLowerCase();
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => handleSelectUser(u)}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-500/10 border-emerald-500/50 text-white shadow-md'
-                        : 'bg-zinc-800/40 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                    }`}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm"
-                      style={{ backgroundColor: u.avatarColor || '#6366f1' }}
-                    >
-                      {u.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold truncate">{u.name}</p>
-                      <p className="text-[10px] text-zinc-500 truncate">{u.role === 'ADMIN' ? 'Administrador' : 'Usuário'}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium text-center">
             {error}
@@ -128,7 +71,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com ou lucasconto"
+                placeholder="Seu e-mail ou usuário"
                 className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
@@ -155,7 +98,7 @@ export default function LoginPage() {
             className="w-full mt-2 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-sm transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? (
-              <span>Aguarde...</span>
+              <span>Entrando...</span>
             ) : (
               <>
                 <UserCheck className="w-4 h-4" />
@@ -164,15 +107,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center">
-          <p className="text-xs text-zinc-500">
-            Administrador: <strong className="text-zinc-300">lucasconto</strong> | Senha: <strong className="text-zinc-300">Senha@123</strong>
-          </p>
-          <p className="text-[11px] text-zinc-600 mt-1">
-            Novos usuários são cadastrados exclusivamente pelo Administrador no Painel Backoffice.
-          </p>
-        </div>
       </div>
     </div>
   );
