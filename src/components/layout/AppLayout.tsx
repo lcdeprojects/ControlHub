@@ -1,17 +1,48 @@
 'use client';
 
-import React from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { MobileNav } from '@/components/layout/MobileNav';
+import { useAuth } from '@/contexts/AuthContext';
+import { ShieldCheck } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
   const isLoginPage = pathname === '/login';
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user && !isLoginPage) {
+        router.push('/login');
+      } else if (user && isLoginPage) {
+        router.push('/');
+      } else if (user && pathname === '/admin' && user.role !== 'ADMIN') {
+        router.push('/');
+      }
+    }
+  }, [user, loading, isLoginPage, pathname, router]);
 
   if (isLoginPage) {
     return <div className="w-full min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">{children}</div>;
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center animate-pulse">
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+        </div>
+        <p className="text-xs text-zinc-400 font-medium">Verificando autenticação...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (

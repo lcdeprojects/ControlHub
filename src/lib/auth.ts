@@ -64,10 +64,7 @@ export async function getAuthUserFromRequest(req?: Request) {
     }
 
     if (!sessionId) {
-      const defaultUser = await db.query.users.findFirst({
-        where: eq(s.users.id, 'usr_default'),
-      });
-      return defaultUser || null;
+      return null;
     }
 
     const now = new Date().toISOString();
@@ -79,10 +76,7 @@ export async function getAuthUserFromRequest(req?: Request) {
     });
 
     if (!session) {
-      const defaultUser = await db.query.users.findFirst({
-        where: eq(s.users.id, 'usr_default'),
-      });
-      return defaultUser || null;
+      return null;
     }
 
     const user = await db.query.users.findFirst({
@@ -98,7 +92,7 @@ export async function getAuthUserFromRequest(req?: Request) {
 
 export async function getAuthUserId(req?: Request): Promise<string> {
   const user = await getAuthUserFromRequest(req);
-  return user?.id || 'usr_default';
+  return user?.id || '';
 }
 
 export async function seedDefaultUserCategories(userId: string) {
