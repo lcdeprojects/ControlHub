@@ -12,6 +12,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 export default function PlanningPage() {
   const { month, year } = usePeriod();
   const [budgets, setBudgets] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isNewBudgetOpen, setIsNewBudgetOpen] = useState(false);
@@ -21,10 +22,29 @@ export default function PlanningPage() {
   const [editingBudget, setEditingBudget] = useState<any | null>(null);
   const [editLimit, setEditLimit] = useState('');
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      const data = await res.json();
+      if (data.success && data.categories) {
+        const expenseOrHousehold = data.categories.filter(
+          (c: any) => c.type === 'EXPENSE' || c.type === 'HOUSEHOLD'
+        );
+        const list = expenseOrHousehold.length > 0 ? expenseOrHousehold : data.categories;
+        setCategories(list);
+        if (list.length > 0) {
+          setNewCategory((prev) => prev || list[0].id);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchBudgets = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/budgets');
+      const res = await fetch(`/api/budgets?month=${month}&year=${year}`);
       const data = await res.json();
       if (data.success) {
         setBudgets(data.budgets || []);
@@ -35,6 +55,10 @@ export default function PlanningPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchBudgets();
@@ -53,7 +77,7 @@ export default function PlanningPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          categoryId: 'cat_mercado',
+          categoryId: newCategory,
           limitAmount: parseFloat(newLimit.replace(',', '.')),
           month,
           year,
@@ -62,7 +86,6 @@ export default function PlanningPage() {
 
       if (res.ok) {
         setIsNewBudgetOpen(false);
-        setNewCategory('');
         setNewLimit('');
         await fetchBudgets();
       }
@@ -262,14 +285,13 @@ export default function PlanningPage() {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none cursor-pointer"
             >
-              <option value="cat_mercado">Mercado</option>
-              <option value="cat_restaurantes">Restaurantes</option>
-              <option value="cat_moradia">Moradia</option>
-              <option value="cat_transporte">Transporte</option>
-              <option value="cat_lazer">Lazer & Viagens</option>
-              <option value="cat_compras">Compras</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </div>
 

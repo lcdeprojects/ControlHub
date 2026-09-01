@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#030712"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Metallic Emerald/Cyan Sheen -->
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Inner Chart Bar Glow -->
+    <linearGradient id="barGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <!-- Ambient Emerald/Cyan Glow Filter -->
+    <filter id="premiumGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Obsidian Container -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  
+  <!-- Outer Minimalist C-Ring Monogram -->
+  <path d="M 360 180 C 330 130 270 100 200 110 C 130 120 80 180 80 256 C 80 332 130 392 200 402 C 270 412 330 382 360 332" 
+        fill="none" 
+        stroke="url(#metalGrad)" 
+        stroke-width="36" 
+        stroke-linecap="round"
+        filter="url(#premiumGlow)"/>
+
+  <!-- Ascending Bar 1 -->
+  <rect x="180" y="280" width="28" height="70" rx="6" fill="url(#barGrad)"/>
+  <!-- Ascending Bar 2 -->
+  <rect x="224" y="240" width="28" height="110" rx="6" fill="url(#barGrad)"/>
+  <!-- Ascending Bar 3 -->
+  <rect x="268" y="200" width="28" height="150" rx="6" fill="url(#barGrad)"/>
+
+  <!-- Precision Arrow Surge -->
+  <path d="M 170 300 L 290 190 L 370 110 M 310 110 L 370 110 L 370 170" 
+        fill="none" 
+        stroke="url(#metalGrad)" 
+        stroke-width="32" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        filter="url(#premiumGlow)"/>
+</svg>

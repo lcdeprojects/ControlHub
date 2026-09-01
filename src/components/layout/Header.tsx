@@ -13,6 +13,8 @@ import { QuickActionModal } from '../dashboard/QuickActionModal';
 import { usePeriod } from '@/contexts/PeriodContext';
 import Link from 'next/link';
 
+import { ControlHubLogo } from '../ui/ControlHubLogo';
+
 export function Header() {
   const { month, year, nextMonth, prevMonth } = usePeriod();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
@@ -21,13 +23,8 @@ export function Header() {
     <>
       <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
         {/* Mobile Brand Logo */}
-        <div className="flex lg:hidden items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <span className="text-base font-black tracking-tight text-white">
-            Control<span className="text-blue-500">Hub</span>
-          </span>
+        <div className="flex lg:hidden items-center">
+          <ControlHubLogo size="sm" showText={true} />
         </div>
 
         {/* Competence Period Selector */}

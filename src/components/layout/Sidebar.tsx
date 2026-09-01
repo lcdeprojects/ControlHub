@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+
 interface NavItem {
   label: string;
   href: string;
@@ -49,16 +51,8 @@ export function Sidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r border-slate-800/80 bg-slate-950/90 p-4 sticky top-0 z-40">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-2 py-4 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <ShieldCheck className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            ControlHub
-          </h1>
-          <p className="text-xs text-slate-400 font-medium">Gestão Financeira Pro</p>
-        </div>
+      <div className="px-2 py-4 mb-4">
+        <ControlHubLogo size="md" />
       </div>
 
       {/* Navigation Items */}
@@ -104,7 +98,7 @@ export function Sidebar() {
             LC
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-200 truncate">Leonardo C.</p>
+            <p className="text-sm font-medium text-slate-200 truncate">Lucas</p>
             <p className="text-xs text-emerald-400 truncate">● Conectado</p>
           </div>
         </div>

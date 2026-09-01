@@ -8,6 +8,14 @@ import { PeriodProvider } from '@/contexts/PeriodContext';
 export const metadata: Metadata = {
   title: 'ControlHub — Gestão Financeira Pessoal & Cartões de Crédito',
   description: 'Sistema completo e inteligente de controle financeiro, faturas, parcelamentos, patrimônio e importações.',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/logo.png', type: 'image/png' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
