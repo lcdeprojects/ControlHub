@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, LogIn, Lock, Mail, UserCheck } from 'lucide-react';
+import { LogIn, Lock, Mail, UserCheck } from 'lucide-react';
+import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -40,12 +41,9 @@ export default function LoginPage() {
   return (
     <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
       {/* Brand Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4 shadow-lg shadow-emerald-500/5">
-          <ShieldCheck className="w-7 h-7 text-emerald-400" />
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">ControlHub</h1>
-        <p className="text-sm text-zinc-400 mt-1">Gestão Financeira & Autenticação</p>
+      <div className="flex flex-col items-center text-center mb-8">
+        <ControlHubLogo size="xl" className="mb-2" />
+        <p className="text-xs text-zinc-400 font-medium mt-1">Gestão Financeira Executiva & Controle de Ativos</p>
       </div>
 
       {/* Main Login Card */}
