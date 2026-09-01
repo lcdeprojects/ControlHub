@@ -167,19 +167,19 @@ export default function CreditCardsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-widest">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-zinc-800 text-zinc-300 border border-zinc-700 uppercase tracking-widest">
               {formatMonthYear(month, year)}
             </span>
-            <span className="text-xs text-slate-400">Ciclos de Faturamento</span>
+            <span className="text-xs text-zinc-400">Ciclos de Faturamento</span>
           </div>
           <h2 className="text-2xl font-black text-white mt-1">Meus Cartões de Crédito</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-zinc-400 mt-0.5">
             Cadastre, edite ou exclua cartões, configure dias de corte e acompanhe limites e faturas
           </p>
         </div>
         <button
           onClick={() => setIsNewCardOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Novo Cartão</span>
@@ -187,9 +187,9 @@ export default function CreditCardsPage() {
       </div>
 
       {/* Golden Rule Highlight */}
-      <div className="p-4 bg-gradient-to-r from-blue-950/50 to-indigo-950/40 border border-blue-500/20 rounded-2xl flex items-start gap-3">
-        <Receipt className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-blue-200 leading-relaxed">
+      <div className="p-4 bg-zinc-900/90 border border-zinc-800 rounded-2xl flex items-start gap-3">
+        <Receipt className="w-5 h-5 text-zinc-300 shrink-0 mt-0.5" />
+        <div className="text-xs text-zinc-300 leading-relaxed">
           <strong>Arquitetura de Ciclo Inteligente:</strong> O ControlHub diferencia com precisão:{' '}
           <span className="text-white font-semibold">Compra</span> (Data do Fato Gerador) ≠{' '}
           <span className="text-white font-semibold">Parcela</span> (Projeção) ≠{' '}
@@ -243,7 +243,7 @@ export default function CreditCardsPage() {
       >
         <form onSubmit={handleCreateCard} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Nome do Cartão
             </label>
             <input
@@ -252,13 +252,13 @@ export default function CreditCardsPage() {
               placeholder="Ex: Nubank Ultravioleta, Itaú Personnalité..."
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Banco Emissor
               </label>
               <input
@@ -267,18 +267,18 @@ export default function CreditCardsPage() {
                 placeholder="Ex: Nubank, Itaú, Santander..."
                 value={newBank}
                 onChange={(e) => setNewBank(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Bandeira
               </label>
               <select
                 value={newBrand}
                 onChange={(e) => setNewBrand(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               >
                 <option value="Mastercard">Mastercard</option>
                 <option value="Visa">Visa</option>
@@ -290,7 +290,7 @@ export default function CreditCardsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Limite Total (R$)
               </label>
               <input
@@ -300,12 +300,12 @@ export default function CreditCardsPage() {
                 placeholder="5000,00"
                 value={newLimit}
                 onChange={(e) => setNewLimit(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Dia de Corte / Fechamento
               </label>
               <input
@@ -315,12 +315,12 @@ export default function CreditCardsPage() {
                 required
                 value={newClosingDay}
                 onChange={(e) => setNewClosingDay(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Dia de Vencimento
               </label>
               <input
@@ -330,13 +330,13 @@ export default function CreditCardsPage() {
                 required
                 value={newDueDay}
                 onChange={(e) => setNewDueDay(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Últimos 4 Dígitos
             </label>
             <input
@@ -345,22 +345,22 @@ export default function CreditCardsPage() {
               placeholder="Ex: 8842"
               value={newLast4}
               onChange={(e) => setNewLast4(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => setIsNewCardOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
               <span>Salvar Cartão</span>
@@ -379,7 +379,7 @@ export default function CreditCardsPage() {
         >
           <form onSubmit={handleSaveEdit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Nome do Cartão
               </label>
               <input
@@ -387,13 +387,13 @@ export default function CreditCardsPage() {
                 required
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Banco Emissor
                 </label>
                 <input
@@ -401,18 +401,18 @@ export default function CreditCardsPage() {
                   required
                   value={editBank}
                   onChange={(e) => setEditBank(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Bandeira
                 </label>
                 <select
                   value={editBrand}
                   onChange={(e) => setEditBrand(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
                 >
                   <option value="Mastercard">Mastercard</option>
                   <option value="Visa">Visa</option>
@@ -424,7 +424,7 @@ export default function CreditCardsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Limite Total (R$)
                 </label>
                 <input
@@ -433,12 +433,12 @@ export default function CreditCardsPage() {
                   required
                   value={editLimit}
                   onChange={(e) => setEditLimit(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Dia de Corte
                 </label>
                 <input
@@ -448,12 +448,12 @@ export default function CreditCardsPage() {
                   required
                   value={editClosingDay}
                   onChange={(e) => setEditClosingDay(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Dia de Vencimento
                 </label>
                 <input
@@ -463,23 +463,23 @@ export default function CreditCardsPage() {
                   required
                   value={editDueDay}
                   onChange={(e) => setEditDueDay(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
               <button
                 type="button"
                 onClick={() => setEditingCard(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
                 <span>Salvar Alterações</span>

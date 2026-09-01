@@ -26,31 +26,41 @@ export async function GET(request: Request) {
       .leftJoin(s.categories, eq(s.budgets.categoryId, s.categories.id))
       .where(and(eq(s.budgets.month, month), eq(s.budgets.year, year)));
 
-    // 2. Fetch transactions for competenceMonth & competenceYear to calculate spent per category
+    // 2. Fetch transactions to calculate spent per category
     const rawTransactions = await db
       .select({
         categoryId: s.transactions.categoryId,
         amount: s.transactions.amount,
         transactionType: s.transactions.transactionType,
+        competenceMonth: s.transactions.competenceMonth,
+        competenceYear: s.transactions.competenceYear,
+        billingMonth: s.transactions.billingMonth,
+        billingYear: s.transactions.billingYear,
       })
-      .from(s.transactions)
-      .where(
-        and(
-          eq(s.transactions.competenceMonth, month),
-          eq(s.transactions.competenceYear, year)
-        )
-      );
+      .from(s.transactions);
 
     // Sum expenses by categoryId
     const spentMap: Record<string, number> = {};
     for (const t of rawTransactions) {
-      if (
-        t.categoryId &&
-        (t.transactionType === 'EXPENSE' ||
+      if (!t.categoryId) continue;
+
+      const absAmount = Math.abs(t.amount);
+
+      // Check if transaction belongs to the target month/year by competence OR by billing month
+      const belongsToMonth =
+        (t.competenceMonth === month && t.competenceYear === year) ||
+        (t.billingMonth === month && t.billingYear === year);
+
+      if (belongsToMonth) {
+        if (
+          t.transactionType === 'EXPENSE' ||
           t.transactionType === 'CREDIT_CARD_PURCHASE' ||
-          t.transactionType === 'INSTALLMENT')
-      ) {
-        spentMap[t.categoryId] = (spentMap[t.categoryId] || 0) + Math.abs(t.amount);
+          t.transactionType === 'INSTALLMENT'
+        ) {
+          spentMap[t.categoryId] = (spentMap[t.categoryId] || 0) + absAmount;
+        } else if (t.transactionType === 'REFUND') {
+          spentMap[t.categoryId] = (spentMap[t.categoryId] || 0) - absAmount;
+        }
       }
     }
 

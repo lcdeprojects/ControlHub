@@ -49,7 +49,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r border-slate-800/80 bg-slate-950/90 p-4 sticky top-0 z-40">
+    <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r border-zinc-800/80 bg-zinc-950/95 p-4 sticky top-0 z-40">
       {/* Brand Header */}
       <div className="px-2 py-4 mb-4">
         <ControlHubLogo size="md" />
@@ -68,21 +68,21 @@ export function Sidebar() {
               className={cn(
                 'flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group',
                 isActive
-                  ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                  ? 'bg-zinc-800/90 text-white border border-zinc-700/80 shadow-sm shadow-zinc-950/50 font-bold'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/80'
               )}
             >
               <div className="flex items-center gap-3">
                 <Icon
                   className={cn(
                     'w-5 h-5 transition-colors',
-                    isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'
+                    isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'
                   )}
                 />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
-                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
                   {item.badge}
                 </span>
               )}
@@ -92,13 +92,13 @@ export function Sidebar() {
       </nav>
 
       {/* User Footer Summary */}
-      <div className="mt-auto pt-4 border-t border-slate-800/80">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-900/60 border border-slate-800">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-sm text-white">
+      <div className="mt-auto pt-4 border-t border-zinc-800/80">
+        <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900/60 border border-zinc-800">
+          <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-sm text-white shadow-md">
             LC
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-200 truncate">Lucas</p>
+            <p className="text-sm font-medium text-zinc-200 truncate">Lucas</p>
             <p className="text-xs text-emerald-400 truncate">● Conectado</p>
           </div>
         </div>

@@ -21,7 +21,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
         {/* Mobile Brand Logo */}
         <div className="flex lg:hidden items-center">
           <ControlHubLogo size="sm" showText={true} />
@@ -29,21 +29,21 @@ export function Header() {
 
         {/* Competence Period Selector */}
         <div className="flex items-center">
-          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 shadow-inner">
+          <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl p-1 shadow-inner">
             <button
               onClick={prevMonth}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Mês anterior"
             >
               <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold text-slate-200">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold text-zinc-200">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-300" />
               <span>{formatMonthYear(month, year)}</span>
             </div>
             <button
               onClick={nextMonth}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Próximo mês"
             >
               <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -55,7 +55,7 @@ export function Header() {
         <div className="flex items-center">
           <button
             onClick={() => setIsQuickActionOpen(true)}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all duration-200 active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all duration-200 active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden xs:inline">Novo Lançamento</span>

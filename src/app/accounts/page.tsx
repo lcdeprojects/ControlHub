@@ -202,7 +202,7 @@ export default function AccountsPage() {
           </button>
           <button
             onClick={() => setIsNewAccountOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Nova Conta</span>
@@ -292,7 +292,7 @@ export default function AccountsPage() {
       >
         <form onSubmit={handleCreateAccount} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Nome da Conta
             </label>
             <input
@@ -301,19 +301,19 @@ export default function AccountsPage() {
               placeholder="Ex: Santander Select, Nubank, Itaú..."
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Tipo de Conta
               </label>
               <select
                 value={newType}
                 onChange={(e) => setNewType(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               >
                 <option value="CHECKING">Conta Corrente</option>
                 <option value="SAVINGS">Poupança</option>
@@ -323,7 +323,7 @@ export default function AccountsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Instituição / Banco
               </label>
               <input
@@ -331,14 +331,14 @@ export default function AccountsPage() {
                 placeholder="Ex: Nubank, Itaú, Bradesco..."
                 value={newBank}
                 onChange={(e) => setNewBank(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Saldo Inicial (R$)
               </label>
               <input
@@ -347,16 +347,16 @@ export default function AccountsPage() {
                 placeholder="0,00"
                 value={newInitialBalance}
                 onChange={(e) => setNewInitialBalance(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Cor de Identificação
               </label>
               <div className="flex items-center gap-2 mt-1">
-                {['#3b82f6', '#820ad1', '#ec7000', '#10b981', '#0b1d3a', '#ef4444'].map((color) => (
+                {['#e2e8f0', '#820ad1', '#ec7000', '#10b981', '#0b1d3a', '#ef4444'].map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -371,18 +371,18 @@ export default function AccountsPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => setIsNewAccountOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
               <span>Salvar Conta</span>
@@ -401,7 +401,7 @@ export default function AccountsPage() {
         >
           <form onSubmit={handleSaveEdit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Nome da Conta
               </label>
               <input
@@ -409,19 +409,19 @@ export default function AccountsPage() {
                 required
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Tipo de Conta
                 </label>
                 <select
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
                 >
                   <option value="CHECKING">Conta Corrente</option>
                   <option value="SAVINGS">Poupança</option>
@@ -431,20 +431,20 @@ export default function AccountsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Instituição / Banco
                 </label>
                 <input
                   type="text"
                   value={editBank}
                   onChange={(e) => setEditBank(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Saldo Atual (R$)
               </label>
               <input
@@ -453,22 +453,22 @@ export default function AccountsPage() {
                 required
                 value={editBalance}
                 onChange={(e) => setEditBalance(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-base focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-base focus:border-zinc-400 focus:outline-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
               <button
                 type="button"
                 onClick={() => setEditingAccount(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
                 <span>Salvar Alterações</span>
@@ -486,15 +486,15 @@ export default function AccountsPage() {
         description="Mova recursos entre suas contas com neutralidade fiscal e contábil"
       >
         <form onSubmit={handleTransfer} className="space-y-4">
-          <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-start gap-3 text-xs text-purple-300">
-            <ShieldCheck className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-zinc-800/80 border border-zinc-700/80 rounded-xl flex items-start gap-3 text-xs text-zinc-300">
+            <ShieldCheck className="w-5 h-5 text-zinc-200 shrink-0 mt-0.5" />
             <span>
               <strong>Regra de Integridade:</strong> Transferências entre contas próprias nunca são tratadas como receitas ou despesas, mantendo a precisão exata do seu fluxo.
             </span>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Valor da Transferência (R$)
             </label>
             <input
@@ -504,19 +504,19 @@ export default function AccountsPage() {
               placeholder="0,00"
               value={transferAmount}
               onChange={(e) => setTransferAmount(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-lg focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-lg focus:border-zinc-400 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Conta de Origem (Débito)
               </label>
               <select
                 value={sourceAcc}
                 onChange={(e) => setSourceAcc(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -526,13 +526,13 @@ export default function AccountsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Conta de Destino (Crédito)
               </label>
               <select
                 value={destAcc}
                 onChange={(e) => setDestAcc(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -544,7 +544,7 @@ export default function AccountsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Data da Movimentação
             </label>
             <input
@@ -552,22 +552,22 @@ export default function AccountsPage() {
               required
               value={transferDate}
               onChange={(e) => setTransferDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => setIsTransferOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
               <span>Confirmar Transferência</span>

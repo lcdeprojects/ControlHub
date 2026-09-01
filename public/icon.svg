@@ -1,57 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
+    <!-- Dark Obsidian Background -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#030712"/>
-      <stop offset="100%" stop-color="#0f172a"/>
+      <stop offset="0%" stop-color="#0c0c0e"/>
+      <stop offset="100%" stop-color="#040405"/>
     </linearGradient>
 
-    <!-- Metallic Emerald/Cyan Sheen -->
+    <!-- Metallic Titanium Gradient -->
     <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="30%" stop-color="#38bdf8"/>
-      <stop offset="70%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#059669"/>
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#cbd5e1"/>
+      <stop offset="70%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
     </linearGradient>
 
-    <!-- Inner Chart Bar Glow -->
-    <linearGradient id="barGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#059669"/>
-      <stop offset="50%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#38bdf8"/>
-    </linearGradient>
-
-    <!-- Ambient Emerald/Cyan Glow Filter -->
-    <filter id="premiumGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="12" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    <!-- Bevel Shadow Effect -->
+    <filter id="bevelShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.8"/>
     </filter>
   </defs>
 
-  <!-- Dark Obsidian Container -->
+  <!-- Dark Obsidian Container with Rounded Corners -->
   <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
   
-  <!-- Outer Minimalist C-Ring Monogram -->
-  <path d="M 360 180 C 330 130 270 100 200 110 C 130 120 80 180 80 256 C 80 332 130 392 200 402 C 270 412 330 382 360 332" 
+  <!-- Outer C-Monogram Metallic Ring -->
+  <path d="M 350 185 C 320 135 265 105 195 115 C 125 125 75 185 75 260 C 75 335 125 395 195 405 C 265 415 325 385 355 335" 
         fill="none" 
         stroke="url(#metalGrad)" 
-        stroke-width="36" 
+        stroke-width="38" 
         stroke-linecap="round"
-        filter="url(#premiumGlow)"/>
+        filter="url(#bevelShadow)"/>
 
   <!-- Ascending Bar 1 -->
-  <rect x="180" y="280" width="28" height="70" rx="6" fill="url(#barGrad)"/>
+  <rect x="180" y="275" width="28" height="75" rx="6" fill="url(#metalGrad)" filter="url(#bevelShadow)"/>
   <!-- Ascending Bar 2 -->
-  <rect x="224" y="240" width="28" height="110" rx="6" fill="url(#barGrad)"/>
+  <rect x="225" y="235" width="28" height="115" rx="6" fill="url(#metalGrad)" filter="url(#bevelShadow)"/>
   <!-- Ascending Bar 3 -->
-  <rect x="268" y="200" width="28" height="150" rx="6" fill="url(#barGrad)"/>
+  <rect x="270" y="195" width="28" height="155" rx="6" fill="url(#metalGrad)" filter="url(#bevelShadow)"/>
 
-  <!-- Precision Arrow Surge -->
-  <path d="M 170 300 L 290 190 L 370 110 M 310 110 L 370 110 L 370 170" 
+  <!-- Ascending Growth Arrow Surge -->
+  <path d="M 165 305 L 290 190 L 375 110 M 315 110 L 375 110 L 375 170" 
         fill="none" 
         stroke="url(#metalGrad)" 
-        stroke-width="32" 
+        stroke-width="34" 
         stroke-linecap="round" 
         stroke-linejoin="round"
-        filter="url(#premiumGlow)"/>
+        filter="url(#bevelShadow)"/>
 </svg>

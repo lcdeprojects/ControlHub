@@ -115,7 +115,7 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Type Selector Tabs */}
-        <div className="grid grid-cols-4 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs font-semibold">
+        <div className="grid grid-cols-4 gap-2 p-1 bg-zinc-950 rounded-xl border border-zinc-800 text-xs font-semibold">
           <button
             type="button"
             onClick={() => {
@@ -124,8 +124,8 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             }}
             className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
               type === 'EXPENSE'
-                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 font-bold'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <TrendingDown className="w-3.5 h-3.5" />
@@ -140,8 +140,8 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             }}
             className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
               type === 'INCOME'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
@@ -156,8 +156,8 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             }}
             className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
               type === 'CREDIT_CARD_PURCHASE'
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-white border border-zinc-600 font-bold'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <CreditCard className="w-3.5 h-3.5" />
@@ -172,8 +172,8 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             }}
             className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
               type === 'TRANSFER'
-                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/40'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-white border border-zinc-600 font-bold'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
@@ -184,7 +184,7 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
         {/* Amount & Date */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Valor (R$)
             </label>
             <input
@@ -194,11 +194,11 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
               placeholder="0,00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-base focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-base focus:border-zinc-400 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Data do Fato Gerador
             </label>
             <input
@@ -206,14 +206,14 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
             />
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">
+          <label className="block text-xs font-semibold text-zinc-300 mb-1">
             Descrição / Estabelecimento
           </label>
           <input
@@ -222,7 +222,7 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             placeholder="Ex: Supermercado, Aluguel, Farmácia, Salário..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
           />
         </div>
 
@@ -230,14 +230,14 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
         {type === 'CREDIT_CARD_PURCHASE' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Cartão de Crédito
               </label>
               {cards.length > 0 ? (
                 <select
                   value={cardId}
                   onChange={(e) => setCardId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
                 >
                   {cards.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -253,13 +253,13 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
               )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Parcelas (1x à vista ou N parcelas)
               </label>
               <select
                 value={installmentCount}
                 onChange={(e) => setInstallmentCount(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               >
                 <option value="1">1x (À vista na fatura)</option>
                 {[2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 18, 24].map((n) => (
@@ -274,14 +274,14 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Conta Bancária
               </label>
               {accounts.length > 0 ? (
                 <select
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
                 >
                   {accounts.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -290,20 +290,20 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
                   ))}
                 </select>
               ) : (
-                <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[11px] text-blue-300 flex items-center gap-2">
+                <div className="p-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-[11px] text-zinc-300 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>Cadastre uma conta no menu "Minhas Contas".</span>
                 </div>
               )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1">
                 Forma de Pagamento
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
               >
                 <option value="PIX">PIX</option>
                 <option value="DEBIT">Débito em Conta</option>
@@ -318,13 +318,13 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
 
         {/* Category */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">
+          <label className="block text-xs font-semibold text-zinc-300 mb-1">
             Categoria
           </label>
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
           >
             {categories.length > 0 ? (
               categories.map((c) => (
@@ -343,18 +343,18 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>{loading ? 'Salvando...' : 'Confirmar Lançamento'}</span>

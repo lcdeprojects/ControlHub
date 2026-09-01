@@ -48,7 +48,7 @@ export function MobileNav() {
   return (
     <>
       {/* Bottom Floating Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-800/80 px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-bottom">
         {mainItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -60,8 +60,8 @@ export function MobileNav() {
               className={cn(
                 'flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl text-[10px] font-medium transition-all active:scale-95',
                 isActive
-                  ? 'text-blue-400 font-bold bg-blue-500/10'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'text-rose-400 font-bold bg-rose-500/10'
+                  : 'text-zinc-400 hover:text-zinc-200'
               )}
             >
               <Icon className="w-4.5 h-4.5" />
@@ -75,7 +75,7 @@ export function MobileNav() {
           onClick={() => setIsMenuOpen(true)}
           className={cn(
             'flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl text-[10px] font-medium transition-all active:scale-95 cursor-pointer',
-            isMenuOpen ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'
+            isMenuOpen ? 'text-rose-400 font-bold bg-rose-500/10' : 'text-zinc-400 hover:text-zinc-200'
           )}
         >
           <Menu className="w-4.5 h-4.5" />
@@ -104,8 +104,8 @@ export function MobileNav() {
                 className={cn(
                   'flex items-center justify-between p-3 rounded-2xl border transition-all active:scale-98',
                   isActive
-                    ? 'bg-blue-600/15 border-blue-500/30 text-white'
-                    : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                    ? 'bg-rose-600/15 border-rose-500/30 text-white'
+                    : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-300 hover:border-zinc-700'
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -113,19 +113,19 @@ export function MobileNav() {
                     className={cn(
                       'w-9 h-9 rounded-xl flex items-center justify-center',
                       isActive
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                        : 'bg-slate-900 text-slate-400 border border-slate-800'
+                        ? 'bg-rose-600 text-white shadow-md shadow-rose-500/20'
+                        : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
                     )}
                   >
                     <Icon className="w-4.5 h-4.5" />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">{m.label}</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{m.desc}</p>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">{m.desc}</p>
                   </div>
                 </div>
 
-                <ChevronRight className="w-4 h-4 text-slate-500" />
+                <ChevronRight className="w-4 h-4 text-zinc-500" />
               </Link>
             );
           })}

@@ -95,31 +95,31 @@ export function PayInvoiceModal({
       description={`Liquidação da fatura do ${cardName}`}
     >
       <form onSubmit={handlePay} className="space-y-4">
-        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-          <div className="text-xs text-blue-300 leading-relaxed">
+        <div className="p-4 bg-zinc-800/80 border border-zinc-700/80 rounded-2xl flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-zinc-200 shrink-0 mt-0.5" />
+          <div className="text-xs text-zinc-300 leading-relaxed">
             <strong>Garantia de Integridade Contábil:</strong> O pagamento da fatura será registrado como liquidação de obrigação (saída de caixa bancária), <strong>sem duplicar</strong> as despesas econômicas já reconhecidas nas compras.
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">
+          <label className="block text-xs font-semibold text-zinc-300 mb-1">
             Valor a Pagar (R$)
           </label>
           <input
             type="text"
             disabled
             value={formatCurrency(amount)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-lg cursor-not-allowed opacity-90"
+            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-lg cursor-not-allowed opacity-90"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">
+          <label className="block text-xs font-semibold text-zinc-300 mb-1">
             Conta Bancária de Saída
           </label>
           {fetchingAccounts ? (
-            <div className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 text-xs">
+            <div className="px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 text-xs">
               Carregando contas cadastradas...
             </div>
           ) : accounts.length === 0 ? (
@@ -131,7 +131,7 @@ export function PayInvoiceModal({
             <select
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
             >
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>
@@ -143,7 +143,7 @@ export function PayInvoiceModal({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">
+          <label className="block text-xs font-semibold text-zinc-300 mb-1">
             Data Efetiva do Pagamento
           </label>
           <input
@@ -151,22 +151,22 @@ export function PayInvoiceModal({
             required
             value={paymentDate}
             onChange={(e) => setPaymentDate(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
           />
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading || accounts.length === 0 || !accountId}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>{loading ? 'Processando...' : 'Confirmar Pagamento'}</span>

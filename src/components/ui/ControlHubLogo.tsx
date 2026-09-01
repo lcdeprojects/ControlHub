@@ -16,9 +16,9 @@ export function ControlHubLogo({
   className,
 }: ControlHubLogoProps) {
   const sizeMap = {
-    sm: { box: 'w-7 h-7 rounded-lg', text: 'text-sm', sub: 'text-[9px]' },
+    sm: { box: 'w-8 h-8 rounded-xl', text: 'text-sm', sub: 'text-[9px]' },
     md: { box: 'w-10 h-10 rounded-xl', text: 'text-lg', sub: 'text-xs' },
-    lg: { box: 'w-12 h-12 rounded-xl', text: 'text-xl', sub: 'text-xs' },
+    lg: { box: 'w-12 h-12 rounded-2xl', text: 'text-xl', sub: 'text-xs' },
     xl: { box: 'w-16 h-16 rounded-2xl', text: 'text-3xl', sub: 'text-sm' },
   };
 
@@ -26,9 +26,9 @@ export function ControlHubLogo({
 
   return (
     <div className={cn('flex items-center gap-3 group select-none cursor-pointer', className)}>
-      {/* Icon Emblem Frame with Subtle Metallic Border & Glow */}
+      {/* Icon Emblem Frame with Metallic Titanium Ring */}
       <div className={cn(
-        'relative overflow-hidden shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-500/30 group-hover:ring-cyan-400/50 group-hover:shadow-cyan-500/20 group-hover:scale-105 transition-all duration-300 bg-slate-950 flex items-center justify-center p-0.5',
+        'relative overflow-hidden shadow-2xl shadow-zinc-950/80 ring-1 ring-zinc-700/60 group-hover:ring-zinc-400/80 group-hover:shadow-zinc-300/10 group-hover:scale-105 transition-all duration-300 bg-zinc-950 flex items-center justify-center p-0.5',
         currentSize.box
       )}>
         <Image
@@ -45,12 +45,12 @@ export function ControlHubLogo({
         <div className="flex flex-col">
           <span className={cn('font-black tracking-tight flex items-center', currentSize.text)}>
             <span className="text-white">Control</span>
-            <span className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-300 bg-clip-text text-transparent ml-0.5">
+            <span className="bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-400 bg-clip-text text-transparent ml-0.5">
               Hub
             </span>
           </span>
-          <span className={cn('text-slate-400 font-medium tracking-wide -mt-0.5', currentSize.sub)}>
-            Gestão Financeira Pro
+          <span className={cn('text-zinc-400 font-medium tracking-wide -mt-0.5', currentSize.sub)}>
+            Trading & Financial Control
           </span>
         </div>
       )}

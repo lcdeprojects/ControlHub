@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className="bg-slate-950 text-slate-100 min-h-screen flex">
+      <body className="bg-zinc-950 text-zinc-100 min-h-screen flex">
         <PeriodProvider>
           {/* Desktop Sidebar */}
           <Sidebar />
