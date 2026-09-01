@@ -9,7 +9,6 @@ import {
   CreditCard,
   Layers,
   Menu,
-  X,
   Landmark,
   Home,
   Target,
@@ -17,12 +16,15 @@ import {
   FileSpreadsheet,
   BarChart3,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const mainItems = [
@@ -32,7 +34,7 @@ export function MobileNav() {
     { label: 'Parcelas', href: '/installments', icon: Layers },
   ];
 
-  const allModules = [
+  const baseModules = [
     { label: 'Painel Geral', href: '/', icon: LayoutDashboard, desc: 'Visão executiva e KPIs' },
     { label: 'Extrato & Transações', href: '/transactions', icon: ArrowLeftRight, desc: 'Lançamentos e conciliação' },
     { label: 'Minhas Contas', href: '/accounts', icon: Landmark, desc: 'Saldos bancários e transferências' },
@@ -44,6 +46,13 @@ export function MobileNav() {
     { label: 'Importar Extratos', href: '/import', icon: FileSpreadsheet, desc: 'Planilhas XLS, XLSX e CSV' },
     { label: 'Relatórios DRE', href: '/reports', icon: BarChart3, desc: 'Consumo vs Fluxo de Caixa' },
   ];
+
+  const allModules = user?.role === 'ADMIN'
+    ? [
+        { label: 'Painel Admin (Backoffice)', href: '/admin', icon: ShieldCheck, desc: 'Gestão de usuários e permissões' },
+        ...baseModules,
+      ]
+    : baseModules;
 
   return (
     <>

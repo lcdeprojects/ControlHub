@@ -4,6 +4,7 @@ import { generateInstallments } from '../lib/engines/installment-engine';
 import { calculateMatchScore } from '../lib/engines/matching-algorithm';
 import { generateTransactionFingerprint } from '../lib/engines/fingerprint';
 import { calculateFinancialSummary } from '../lib/engines/financial-calculator';
+import { formatDate } from '../lib/utils';
 import { RawTransactionItem } from '../lib/types';
 
 describe('Suíte de Regras Financeiras — Cenários A a F (Requisito 49)', () => {
@@ -196,5 +197,15 @@ describe('Suíte de Regras Financeiras — Cenários A a F (Requisito 49)', () =
     expect(summary.consumption.totalExpense).toBe(0);
     expect(summary.cashFlow.totalInflow).toBe(0);
     expect(summary.cashFlow.totalOutflow).toBe(0);
+  });
+});
+
+describe('Utilitário formatDate (Tratamento de Datas do Banco)', () => {
+  it('Formata corretamente datas YYYY-MM-DD, timestamps SQLite e ISO sem estourar RangeError', () => {
+    expect(formatDate('2026-09-01')).toBe('01/09/2026');
+    expect(formatDate('2026-09-01 09:44:11')).toBe('01/09/2026');
+    expect(formatDate('2026-09-01T09:44:11.000Z')).toBe('01/09/2026');
+    expect(formatDate('')).toBe('-');
+    expect(formatDate('data_invalida')).toBe('-');
   });
 });

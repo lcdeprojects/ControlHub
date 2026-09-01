@@ -16,6 +16,7 @@ import {
   Check,
   RefreshCw,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 
 const AVATAR_COLORS = [
@@ -191,6 +192,28 @@ export default function AdminBackofficePage() {
     }
   };
 
+  const handleDeleteUser = async (targetUserId: string, targetName: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o usuário ${targetName}? Esta ação não pode ser desfeita.`)) return;
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch(`/api/admin/users?id=${encodeURIComponent(targetUserId)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Erro ao excluir usuário');
+      } else {
+        setSuccessMsg(data.message || `Usuário ${targetName} excluído.`);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao excluir usuário');
+    }
+  };
+
   const adminCount = usersList.filter((u) => u.role === 'ADMIN').length;
   const userCount = usersList.filter((u) => u.role === 'USER').length;
 
@@ -351,6 +374,17 @@ export default function AdminBackofficePage() {
                         <KeyRound className="w-3.5 h-3.5 text-amber-400" />
                         <span>Resetar Senha</span>
                       </button>
+
+                      {u.id !== user?.id && (
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.name)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium border border-red-500/30 transition-colors cursor-pointer"
+                          title="Excluir usuário"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Excluir</span>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

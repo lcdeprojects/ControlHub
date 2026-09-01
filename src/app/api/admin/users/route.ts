@@ -81,3 +81,41 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Erro ao criar usuário' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const authUser = await getAuthUserFromRequest(req);
+    if (!authUser || authUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem excluir usuários.' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('id');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'ID do usuário é obrigatório' }, { status: 400 });
+    }
+
+    if (userId === authUser.id) {
+      return NextResponse.json({ error: 'Você não pode excluir a sua própria conta de administrador enquanto estiver logado.' }, { status: 400 });
+    }
+
+    const targetUser = await db.query.users.findFirst({
+      where: eq(s.users.id, userId),
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    }
+
+    await db.delete(s.users).where(eq(s.users.id, userId));
+
+    return NextResponse.json({
+      success: true,
+      message: `Usuário ${targetUser.name} foi excluído com sucesso.`,
+    });
+  } catch (error: any) {
+    console.error('Admin delete user error:', error);
+    return NextResponse.json({ error: error.message || 'Erro ao excluir usuário' }, { status: 500 });
+  }
+}
