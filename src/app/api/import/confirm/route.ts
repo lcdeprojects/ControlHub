@@ -3,10 +3,16 @@ import { db } from '@/db';
 import * as s from '@/db/schema';
 import { ImportParsedRow } from '@/lib/types';
 import { calculateInvoiceCycle } from '@/lib/engines/invoice-cycle';
-import { eq } from 'drizzle-orm';
+import { eq, or, and } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { rows, targetCardId, targetAccountId } = await request.json() as {
       rows: ImportParsedRow[];
       targetCardId?: string;
@@ -16,11 +22,48 @@ export async function POST(request: Request) {
     let importedCount = 0;
     let autoLinkedCount = 0;
 
+    // Validar se cartão pertence ao usuário
+    let validCardId: string | undefined;
     let cardConfig = { closingDay: 3, dueDay: 10 };
     if (targetCardId) {
-      const c = (await db.select().from(s.creditCards).where(eq(s.creditCards.id, targetCardId)))[0];
-      if (c) cardConfig = { closingDay: c.closingDay, dueDay: c.dueDay };
+      const c = (
+        await db
+          .select()
+          .from(s.creditCards)
+          .where(and(eq(s.creditCards.id, targetCardId), eq(s.creditCards.userId, userId)))
+      )[0];
+      if (c) {
+        validCardId = c.id;
+        cardConfig = { closingDay: c.closingDay, dueDay: c.dueDay };
+      }
     }
+
+    // Validar se conta pertence ao usuário
+    let validAccountId: string | undefined;
+    if (targetAccountId) {
+      const acc = (
+        await db
+          .select({ id: s.accounts.id })
+          .from(s.accounts)
+          .where(and(eq(s.accounts.id, targetAccountId), eq(s.accounts.userId, userId)))
+      )[0];
+      if (acc) validAccountId = acc.id;
+    }
+
+    // Buscar categorias válidas para o usuário (ou categorias do sistema)
+    const userCategories = await db
+      .select({ id: s.categories.id, name: s.categories.name })
+      .from(s.categories)
+      .where(or(eq(s.categories.userId, userId), eq(s.categories.isSystem, true)));
+
+    const findBestCategory = (rawCategory?: string) => {
+      if (rawCategory) {
+        const rawLower = rawCategory.toLowerCase();
+        const found = userCategories.find(c => c.name.toLowerCase().includes(rawLower) || rawLower.includes(c.name.toLowerCase()));
+        if (found) return found.id;
+      }
+      return userCategories[0]?.id || null;
+    };
 
     for (const row of rows) {
       if (row.isDuplicate) continue;
@@ -32,13 +75,14 @@ export async function POST(request: Request) {
       let billMonth = compMonth;
       let billYear = compYear;
 
-      if (targetCardId) {
+      if (validCardId) {
         const cycle = calculateInvoiceCycle(row.date, cardConfig);
         billMonth = cycle.billingMonth;
         billYear = cycle.billingYear;
       }
 
       const txId = `t_imp_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      const resolvedCatId = findBestCategory(row.rawCategory);
 
       // Se for parcela vinculada a compra existente
       if (row.matchScore?.action === 'AUTO_LINK' && row.matchScore.matchedPurchaseId) {
@@ -47,12 +91,12 @@ export async function POST(request: Request) {
 
       await db.insert(s.transactions).values({
         id: txId,
-        userId: 'usr_default',
-        accountId: targetAccountId,
-        creditCardId: targetCardId,
-        categoryId: 'cat_compras',
-        transactionType: targetCardId ? (row.isInstallment ? 'INSTALLMENT' : 'CREDIT_CARD_PURCHASE') : 'EXPENSE',
-        paymentMethod: targetCardId ? 'CREDIT' : 'DEBIT',
+        userId,
+        accountId: validAccountId,
+        creditCardId: validCardId,
+        categoryId: resolvedCatId,
+        transactionType: validCardId ? (row.isInstallment ? 'INSTALLMENT' : 'CREDIT_CARD_PURCHASE') : 'EXPENSE',
+        paymentMethod: validCardId ? 'CREDIT' : 'DEBIT',
         description: row.description,
         normalizedDescription: row.normalizedDescription,
         amount: row.amount,

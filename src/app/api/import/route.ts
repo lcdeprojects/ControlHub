@@ -5,12 +5,17 @@ import {
   parseRawSpreadsheet,
   autoDetectColumns,
   processImportRows,
-  ColumnMappingConfig,
 } from '@/lib/engines/import-parser';
 import { eq } from 'drizzle-orm';
+import { getAuthUserId } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const targetCardId = (formData.get('targetCardId') as string) || undefined;
@@ -30,11 +35,14 @@ export async function POST(request: Request) {
     // Auto-detectar colunas
     const detectedMapping = autoDetectColumns(rawRows[0]);
 
-    // Buscar fingerprints existentes no banco
-    const existingTransactions = await db.select({ fingerprint: s.transactions.fingerprint }).from(s.transactions);
+    // Buscar fingerprints existentes no banco para o usuário ativo
+    const existingTransactions = await db
+      .select({ fingerprint: s.transactions.fingerprint })
+      .from(s.transactions)
+      .where(eq(s.transactions.userId, userId));
     const existingFingerprints = new Set(existingTransactions.map((t) => t.fingerprint));
 
-    // Buscar compras parceladas existentes para matching
+    // Buscar compras parceladas existentes para matching do usuário ativo
     const existingPurchases = await db
       .select({
         id: s.installmentPurchases.id,
@@ -43,13 +51,14 @@ export async function POST(request: Request) {
         installmentValue: s.installmentPurchases.installmentValue,
         installmentCount: s.installmentPurchases.installmentCount,
       })
-      .from(s.installmentPurchases);
+      .from(s.installmentPurchases)
+      .where(eq(s.installmentPurchases.userId, userId));
 
     // Processar linhas
     const processedRows = processImportRows(
       rawRows,
       detectedMapping,
-      'usr_default',
+      userId,
       targetCardId,
       existingFingerprints,
       existingPurchases

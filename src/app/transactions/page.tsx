@@ -20,9 +20,11 @@ import {
   Check,
 } from 'lucide-react';
 import { QuickActionModal } from '@/components/dashboard/QuickActionModal';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -42,10 +44,20 @@ export default function TransactionsPage() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/transactions');
-      const data = await res.json();
-      if (data.success) {
-        setTransactions(data.transactions);
+      const [txRes, catRes] = await Promise.all([
+        fetch('/api/transactions'),
+        fetch('/api/categories'),
+      ]);
+      const [txData, catData] = await Promise.all([
+        txRes.json(),
+        catRes.json(),
+      ]);
+
+      if (txData.success) {
+        setTransactions(txData.transactions);
+      }
+      if (catData.success) {
+        setCategories(catData.categories);
       }
     } catch (err) {
       console.error('Error:', err);
@@ -226,9 +238,10 @@ export default function TransactionsPage() {
         </div>
       </Card>
 
-      {/* Table */}
+      {/* Transactions Container: Table for Desktop / Cards for Mobile */}
       <Card className="p-0 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
@@ -311,6 +324,80 @@ export default function TransactionsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-slate-800/60">
+          {filtered.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              Nenhum lançamento encontrado.
+            </div>
+          ) : (
+            filtered.map((t) => (
+              <div key={t.id} className="p-4 space-y-3 hover:bg-slate-900/40 transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {formatDate(t.transactionDate)}
+                  </span>
+                  <div>{getTypeBadge(t.transactionType)}</div>
+                </div>
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <h4 className="text-sm font-bold text-white truncate">{t.description}</h4>
+                    <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
+                      <span className="flex items-center gap-1 text-slate-300">
+                        <Tag className="w-3 h-3 text-slate-500" />
+                        {t.categoryName || 'Sem categoria'}
+                      </span>
+                      <span>•</span>
+                      <span className="text-slate-400">
+                        {t.cardName ? (
+                          <span className="text-blue-400 font-medium">{t.cardName}</span>
+                        ) : (
+                          t.accountName || 'Conta Corrente'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`text-base font-mono font-extrabold ${
+                        t.transactionType === 'INCOME'
+                          ? 'text-emerald-400'
+                          : t.transactionType === 'EXPENSE' ||
+                            t.transactionType === 'CREDIT_CARD_PURCHASE' ||
+                            t.transactionType === 'INSTALLMENT'
+                          ? 'text-rose-400'
+                          : 'text-slate-300'
+                      }`}
+                    >
+                      {t.transactionType === 'INCOME' ? '+' : '-'} {formatCurrency(t.amount)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    onClick={() => handleOpenEdit(t)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-800 transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Editar</span>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t.id)}
+                    disabled={deletingId === t.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium border border-rose-500/20 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Excluir</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </Card>
 
       {/* Edit Modal */}
@@ -340,12 +427,11 @@ export default function TransactionsPage() {
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Valor (R$)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <CurrencyInput
                   required
+                  placeholder="R$ 0,00"
                   value={editAmount}
-                  onChange={(e) => setEditAmount(e.target.value)}
+                  onChange={(val) => setEditAmount(val)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold text-base focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -373,21 +459,17 @@ export default function TransactionsPage() {
                 onChange={(e) => setEditCategoryId(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-blue-500 focus:outline-none"
               >
-                <option value="cat_mercado">Mercado</option>
-                <option value="cat_restaurantes">Restaurantes</option>
-                <option value="cat_moradia">Moradia</option>
-                <option value="cat_condominio">Condomínio</option>
-                <option value="cat_energia">Energia Elétrica</option>
-                <option value="cat_agua">Água & Saneamento</option>
-                <option value="cat_internet">Internet & Fibra</option>
-                <option value="cat_transporte">Transporte / Uber</option>
-                <option value="cat_combustivel">Combustível</option>
-                <option value="cat_saude">Saúde & Farmácia</option>
-                <option value="cat_academia">Academia</option>
-                <option value="cat_compras">Compras & Eletrônicos</option>
-                <option value="cat_assinaturas">Assinaturas</option>
-                <option value="cat_salario">Salário (Receita)</option>
-                <option value="cat_rendimentos">Rendimentos (Receita)</option>
+                {categories
+                  .filter((c) =>
+                    editingTransaction.transactionType === 'INCOME'
+                      ? c.type === 'INCOME'
+                      : c.type === 'EXPENSE' || c.type === 'HOUSEHOLD'
+                  )
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -395,7 +477,7 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={() => setEditingTransaction(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white cursor-pointer"
               >
                 Cancelar
               </button>

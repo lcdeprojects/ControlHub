@@ -591,7 +591,10 @@ export async function ensureDatabaseSchema() {
         }).onConflictDoNothing();
       }
 
-      // Sincronizar transações de parcelas existentes
+      // 16. Deduplicar Categorias
+      await deduplicateCategories();
+
+      // 17. Sincronizar transações de parcelas existentes
       await syncInstallmentTransactions();
 
       isInitialized = true;
@@ -602,4 +605,46 @@ export async function ensureDatabaseSchema() {
   })();
 
   return initPromise;
+}
+
+async function deduplicateCategories() {
+  try {
+    const allCats: any[] = await db.all(sql`SELECT id, user_id, name, type, is_system FROM categories`);
+    
+    // Group categories by normalized name (lowercase trimmed) and type
+    const map = new Map<string, any[]>();
+    for (const cat of allCats) {
+      const key = `${cat.name.trim().toLowerCase()}_${cat.type}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(cat);
+    }
+
+    for (const [, group] of map.entries()) {
+      if (group.length <= 1) continue;
+
+      // Select canonical category: prioritize system category, then first id
+      group.sort((a, b) => (b.is_system ? 1 : 0) - (a.is_system ? 1 : 0));
+      const canonical = group[0];
+      const duplicateIds = group.slice(1).map((c) => c.id);
+
+      for (const dupId of duplicateIds) {
+        // Re-point transactions
+        await db.run(sql`UPDATE transactions SET category_id = ${canonical.id} WHERE category_id = ${dupId}`);
+        // Re-point budgets
+        await db.run(sql`UPDATE budgets SET category_id = ${canonical.id} WHERE category_id = ${dupId}`);
+        // Re-point installment purchases
+        await db.run(sql`UPDATE installment_purchases SET category_id = ${canonical.id} WHERE category_id = ${dupId}`);
+        // Re-point recurring transactions
+        await db.run(sql`UPDATE recurring_transactions SET category_id = ${canonical.id} WHERE category_id = ${dupId}`);
+        // Re-point merchants
+        await db.run(sql`UPDATE merchants SET default_category_id = ${canonical.id} WHERE default_category_id = ${dupId}`);
+        // Re-point merchant rules
+        await db.run(sql`UPDATE merchant_rules SET suggested_category_id = ${canonical.id} WHERE suggested_category_id = ${dupId}`);
+        // Delete duplicate category
+        await db.run(sql`DELETE FROM categories WHERE id = ${dupId}`);
+      }
+    }
+  } catch (err) {
+    console.error('Error deduplicating categories:', err);
+  }
 }

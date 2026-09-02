@@ -12,11 +12,35 @@ import { FileSpreadsheet, CheckCircle2, ShieldCheck, Sparkles, ArrowRight, Uploa
 export default function ImportPage() {
   const [file, setFile] = useState<File | null>(null);
   const [targetType, setTargetType] = useState<'CARD' | 'ACCOUNT'>('CARD');
-  const [targetCardId, setTargetCardId] = useState('card_master_black');
-  const [targetAccountId, setTargetAccountId] = useState('acc_nubank');
+  const [cardsList, setCardsList] = useState<any[]>([]);
+  const [accountsList, setAccountsList] = useState<any[]>([]);
+  const [targetCardId, setTargetCardId] = useState('');
+  const [targetAccountId, setTargetAccountId] = useState('');
   const [parsedRows, setParsedRows] = useState<ImportParsedRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [importSuccess, setImportSuccess] = useState<any>(null);
+
+  React.useEffect(() => {
+    fetch('/api/cards')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.cards)) {
+          setCardsList(data.cards);
+          if (data.cards.length > 0) setTargetCardId(data.cards[0].id);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/accounts')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.accounts)) {
+          setAccountsList(data.accounts);
+          if (data.accounts.length > 0) setTargetAccountId(data.accounts[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleFileSelect = async (selected: File) => {
     setFile(selected);
@@ -201,19 +225,33 @@ export default function ImportPage() {
           <select
             value={targetCardId}
             onChange={(e) => setTargetCardId(e.target.value)}
-            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 min-w-[240px]"
           >
-            <option value="card_master_black">Mastercard Ultravioleta (Fecha dia 03 / Vence dia 10)</option>
-            <option value="card_visa_infinite">Visa Infinite Itaú (Fecha dia 20 / Vence dia 28)</option>
+            {cardsList.length > 0 ? (
+              cardsList.map((card) => (
+                <option key={card.id} value={card.id}>
+                  {card.name} ({card.bank || 'Cartão'} • final {card.last4Digits || '****'})
+                </option>
+              ))
+            ) : (
+              <option value="">Nenhum cartão cadastrado. Crie em Meus Cartões.</option>
+            )}
           </select>
         ) : (
           <select
             value={targetAccountId}
             onChange={(e) => setTargetAccountId(e.target.value)}
-            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 min-w-[240px]"
           >
-            <option value="acc_nubank">Conta Nubank</option>
-            <option value="acc_itau">Itaú Uniclass</option>
+            {accountsList.length > 0 ? (
+              accountsList.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({acc.bankName || acc.type})
+                </option>
+              ))
+            ) : (
+              <option value="">Nenhuma conta cadastrada. Crie em Minhas Contas.</option>
+            )}
           </select>
         )}
       </Card>

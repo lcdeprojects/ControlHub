@@ -6,6 +6,8 @@ import { TransactionType, PaymentMethod } from '@/lib/types';
 import { TrendingUp, TrendingDown, CreditCard, ArrowLeftRight, Check, AlertCircle } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+
 interface QuickActionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -59,7 +61,6 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
         }
         if (catData.success && catData.categories.length > 0) {
           setCategories(catData.categories);
-          setCategoryId(catData.categories[0].id);
         }
       } catch (err) {
         console.error(err);
@@ -68,6 +69,22 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
 
     fetchOptions();
   }, [isOpen, defaultDateForPeriod]);
+
+  // Dynamic category filtering based on transaction type
+  const filteredCategories = categories.filter((c) => {
+    if (type === 'INCOME') return c.type === 'INCOME';
+    return c.type === 'EXPENSE' || c.type === 'HOUSEHOLD';
+  });
+
+  // Auto-select first valid category when type or category list changes
+  useEffect(() => {
+    if (filteredCategories.length > 0) {
+      const isValid = filteredCategories.some((c) => c.id === categoryId);
+      if (!isValid) {
+        setCategoryId(filteredCategories[0].id);
+      }
+    }
+  }, [type, categories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,13 +204,11 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             <label className="block text-xs font-semibold text-zinc-300 mb-1">
               Valor (R$)
             </label>
-            <input
-              type="number"
-              step="0.01"
+            <CurrencyInput
               required
-              placeholder="0,00"
+              placeholder="R$ 0,00"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(val) => setAmount(val)}
               className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-bold text-base focus:border-zinc-400 focus:outline-none"
             />
           </div>
@@ -326,18 +341,14 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
             onChange={(e) => setCategoryId(e.target.value)}
             className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:border-zinc-400 focus:outline-none"
           >
-            {categories.length > 0 ? (
-              categories.map((c) => (
+            {filteredCategories.length > 0 ? (
+              filteredCategories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))
             ) : (
-              <>
-                <option value="cat_mercado">Mercado</option>
-                <option value="cat_salario">Salário</option>
-                <option value="cat_moradia">Moradia</option>
-              </>
+              <option value="cat_mercado">Sem categoria disponível</option>
             )}
           </select>
         </div>
