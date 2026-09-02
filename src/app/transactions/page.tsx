@@ -18,6 +18,8 @@ import {
   Pencil,
   Trash2,
   Check,
+  MoreVertical,
+  Wallet,
 } from 'lucide-react';
 import { QuickActionModal } from '@/components/dashboard/QuickActionModal';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
@@ -29,6 +31,7 @@ export default function TransactionsPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Edit State
   const [editingTransaction, setEditingTransaction] = useState<any | null>(null);
@@ -139,6 +142,23 @@ export default function TransactionsPage() {
     return matchesSearch;
   });
 
+  const summaryFiltered = filtered.reduce(
+    (acc, t) => {
+      if (t.transactionType === 'INCOME') {
+        acc.income += t.amount;
+      } else if (
+        t.transactionType === 'EXPENSE' ||
+        t.transactionType === 'CREDIT_CARD_PURCHASE' ||
+        t.transactionType === 'INSTALLMENT'
+      ) {
+        acc.expense += t.amount;
+      }
+      return acc;
+    },
+    { income: 0, expense: 0 }
+  );
+  const netFiltered = summaryFiltered.income - summaryFiltered.expense;
+
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'INCOME':
@@ -238,6 +258,60 @@ export default function TransactionsPage() {
         </div>
       </Card>
 
+      {/* Live Summary Cards Bar for Filtered Items */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card className="p-3.5 flex items-center justify-between bg-slate-900/60 border-slate-800/80">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Receitas Filtradas
+            </span>
+            <h3 className="text-lg font-black text-emerald-400 mt-0.5">
+              +{formatCurrency(summaryFiltered.income)}
+            </h3>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <ArrowUpRight className="w-4 h-4" />
+          </div>
+        </Card>
+
+        <Card className="p-3.5 flex items-center justify-between bg-slate-900/60 border-slate-800/80">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Despesas Filtradas
+            </span>
+            <h3 className="text-lg font-black text-rose-400 mt-0.5">
+              -{formatCurrency(summaryFiltered.expense)}
+            </h3>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+            <ArrowDownRight className="w-4 h-4" />
+          </div>
+        </Card>
+
+        <Card className="p-3.5 flex items-center justify-between bg-slate-900/60 border-slate-800/80">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                Resultado Filtrado
+              </span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 font-bold">
+                {filtered.length} itens
+              </span>
+            </div>
+            <h3
+              className={`text-lg font-black mt-0.5 ${
+                netFiltered >= 0 ? 'text-blue-400' : 'text-rose-400'
+              }`}
+            >
+              {netFiltered >= 0 ? '+' : ''}{formatCurrency(netFiltered)}
+            </h3>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <Wallet className="w-4 h-4" />
+          </div>
+        </Card>
+      </div>
+
       {/* Transactions Container: Table for Desktop / Cards for Mobile */}
       <Card className="p-0 overflow-hidden">
         {/* Desktop Table View */}
@@ -333,18 +407,66 @@ export default function TransactionsPage() {
             </div>
           ) : (
             filtered.map((t) => (
-              <div key={t.id} className="p-4 space-y-3 hover:bg-slate-900/40 transition-colors">
+              <div key={t.id} className="p-4 space-y-2.5 hover:bg-slate-900/40 transition-colors relative">
+                {/* Header: Date + Badge + Dropdown Menu (...) */}
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-mono text-slate-400">
-                    {formatDate(t.transactionDate)}
-                  </span>
-                  <div>{getTypeBadge(t.transactionType)}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-mono text-slate-400">
+                      {formatDate(t.transactionDate)}
+                    </span>
+                    {getTypeBadge(t.transactionType)}
+                  </div>
+
+                  {/* Action Menu (...) */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === t.id ? null : t.id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Opções"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {openMenuId === t.id && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setOpenMenuId(null)}
+                        />
+                        <div className="absolute right-0 top-8 z-20 w-36 py-1 bg-slate-900 border border-slate-700 rounded-xl shadow-xl space-y-0.5">
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              handleOpenEdit(t);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-blue-400 transition-colors text-left cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Editar</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              handleDelete(t.id);
+                            }}
+                            disabled={deletingId === t.id}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Excluir</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-start justify-between gap-3">
+                {/* Body: Description + Badges & Amount */}
+                <div className="flex items-baseline justify-between gap-3 pt-1">
                   <div className="space-y-1 min-w-0 flex-1">
                     <h4 className="text-sm font-bold text-white truncate">{t.description}</h4>
-                    <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400 flex-wrap">
                       <span className="flex items-center gap-1 text-slate-300">
                         <Tag className="w-3 h-3 text-slate-500" />
                         {t.categoryName || 'Sem categoria'}
@@ -375,24 +497,6 @@ export default function TransactionsPage() {
                       {t.transactionType === 'INCOME' ? '+' : '-'} {formatCurrency(t.amount)}
                     </span>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  <button
-                    onClick={() => handleOpenEdit(t)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-800 transition-colors cursor-pointer"
-                  >
-                    <Pencil className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Editar</span>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(t.id)}
-                    disabled={deletingId === t.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium border border-rose-500/20 transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Excluir</span>
-                  </button>
                 </div>
               </div>
             ))
