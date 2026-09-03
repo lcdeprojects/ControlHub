@@ -6,8 +6,11 @@ import path from 'path';
 import { ensureDatabaseSchema } from './auto-migrate';
 
 const rawUrl = process.env.DATABASE_URL || 'file:controlhub.db';
+const authToken = process.env.DATABASE_AUTH_TOKEN || undefined;
 
-// Se for arquivo local (ex: file:/data/controlhub.db ou file:controlhub.db), garante que a pasta pai exista
+const isTursoCloud = rawUrl.startsWith('libsql:') || rawUrl.includes('.turso.io');
+
+// Se for arquivo local (ex: file:controlhub.db), garante que a pasta pai exista
 if (rawUrl.startsWith('file:')) {
   try {
     const filePath = rawUrl.replace('file:', '');
@@ -22,10 +25,18 @@ if (rawUrl.startsWith('file:')) {
 
 const client = createClient({
   url: rawUrl,
-  authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+  authToken: authToken,
 });
 
 export const db = drizzle(client, { schema });
+
+export function getDbConnectionInfo() {
+  return {
+    mode: isTursoCloud ? ('TURSO_CLOUD' as const) : ('SQLITE_LOCAL' as const),
+    url: isTursoCloud ? rawUrl.split('?')[0] : 'file:controlhub.db',
+    hasAuthToken: Boolean(authToken),
+  };
+}
 
 // Auto inicializar esquema em runtime (somente fora da fase de build estático do Next.js)
 if (process.env.NEXT_PHASE !== 'phase-production-build' && typeof window === 'undefined') {

@@ -272,3 +272,14 @@ export const auditLogs = sqliteTable('audit_logs', {
   newValues: text('new_values'), // JSON
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
+
+// 16. Authenticators (Passkeys & Biometria WebAuthn)
+export const authenticators = sqliteTable('authenticators', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  credentialPublicKey: text('credential_public_key').notNull(),
+  counter: integer('counter').notNull().default(0),
+  transports: text('transports').default('internal'),
+  deviceName: text('device_name').default('Dispositivo Biométrico'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});

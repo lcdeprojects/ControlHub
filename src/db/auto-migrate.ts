@@ -452,6 +452,19 @@ export async function ensureDatabaseSchema() {
         );
       `);
 
+      // 16. Authenticators (Passkeys & Biometria)
+      await db.run(sql`
+        CREATE TABLE IF NOT EXISTS authenticators (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          credential_public_key TEXT NOT NULL,
+          counter INTEGER DEFAULT 0,
+          transports TEXT DEFAULT 'internal',
+          device_name TEXT DEFAULT 'Dispositivo Biométrico',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // --- Reparos Estruturais para Bancos Legados ---
       await repairCreditCardsTable();
       await repairInvoicesTable();
