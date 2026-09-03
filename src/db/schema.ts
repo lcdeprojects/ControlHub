@@ -188,6 +188,28 @@ export const recurringTransactions = sqliteTable('recurring_transactions', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// 11b. Subscriptions (Assinaturas / Serviços Recorrentes)
+export const subscriptions = sqliteTable('subscriptions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  logoUrl: text('logo_url'),
+  icon: text('icon').default('film'),
+  color: text('color').default('#e50914'),
+  amount: real('amount').notNull(),
+  currency: text('currency').notNull().$type<'BRL' | 'USD' | 'EUR'>().default('BRL'),
+  billingCycle: text('billing_cycle').notNull().$type<'MONTHLY' | 'YEARLY'>().default('MONTHLY'),
+  billingDay: integer('billing_day').notNull().default(1),
+  accountId: text('account_id').references(() => accounts.id),
+  creditCardId: text('credit_card_id').references(() => creditCards.id),
+  categoryId: text('category_id').references(() => categories.id),
+  status: text('status').notNull().$type<'ACTIVE' | 'PAUSED' | 'CANCELLED'>().default('ACTIVE'),
+  nextBillingDate: text('next_billing_date'),
+  notes: text('notes'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 // 12. Budgets (Planejamento / Limites por Categoria)
 export const budgets = sqliteTable('budgets', {
   id: text('id').primaryKey(),

@@ -30,6 +30,9 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [amountFilter, setAmountFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
@@ -47,8 +50,9 @@ export default function TransactionsPage() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
+      const url = `/api/transactions?sortBy=${sortBy}&sortOrder=${sortOrder}`;
       const [txRes, catRes] = await Promise.all([
-        fetch('/api/transactions'),
+        fetch(url),
         fetch('/api/categories'),
       ]);
       const [txData, catData] = await Promise.all([
@@ -71,7 +75,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [sortBy, sortOrder]);
 
   const handleOpenEdit = (t: any) => {
     setEditingTransaction(t);
@@ -133,14 +137,28 @@ export default function TransactionsPage() {
       (t.categoryName && t.categoryName.toLowerCase().includes(search.toLowerCase())) ||
       (t.accountName && t.accountName.toLowerCase().includes(search.toLowerCase()));
 
-    if (typeFilter === 'ALL') return matchesSearch;
-    if (typeFilter === 'INCOME') return matchesSearch && t.transactionType === 'INCOME';
-    if (typeFilter === 'EXPENSE') return matchesSearch && t.transactionType === 'EXPENSE';
-    if (typeFilter === 'CREDIT')
-      return matchesSearch && (t.transactionType === 'CREDIT_CARD_PURCHASE' || t.transactionType === 'INSTALLMENT');
-    if (typeFilter === 'TRANSFER') return matchesSearch && t.transactionType === 'TRANSFER';
-    return matchesSearch;
+    if (!matchesSearch) return false;
+
+    if (typeFilter === 'INCOME' && t.transactionType !== 'INCOME') return false;
+    if (typeFilter === 'EXPENSE' && t.transactionType !== 'EXPENSE') return false;
+    if (typeFilter === 'CREDIT' && t.transactionType !== 'CREDIT_CARD_PURCHASE' && t.transactionType !== 'INSTALLMENT') return false;
+    if (typeFilter === 'TRANSFER' && t.transactionType !== 'TRANSFER') return false;
+
+    if (amountFilter === 'GT_100' && t.amount < 100) return false;
+    if (amountFilter === 'GT_500' && t.amount < 500) return false;
+    if (amountFilter === 'GT_1000' && t.amount < 1000) return false;
+
+    return true;
   });
+
+  const handleToggleSort = (field: 'date' | 'amount' | 'description') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortBy(field);
+      setSortOrder(field === 'amount' ? 'desc' : 'desc');
+    }
+  };
 
   const summaryFiltered = filtered.reduce(
     (acc, t) => {
@@ -222,39 +240,87 @@ export default function TransactionsPage() {
       </div>
 
       {/* Filters Bar */}
-      <Card className="p-4 flex flex-col md:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Buscar por descrição, estabelecimento, categoria ou conta..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
-          />
+      <Card className="p-4 space-y-3">
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="Buscar por descrição, estabelecimento, categoria ou conta..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {/* Sort Selector Dropdown */}
+          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+            <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">Ordenar por:</span>
+            <select
+              value={`${sortBy}_${sortOrder}`}
+              onChange={(e) => {
+                const [sb, so] = e.target.value.split('_');
+                setSortBy(sb as any);
+                setSortOrder(so as any);
+              }}
+              className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-bold focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="date_desc">📅 Data (Mais recente primeiro)</option>
+              <option value="date_asc">📅 Data (Mais antiga primeiro)</option>
+              <option value="amount_desc">📈 Maior Valor ➔ Menor Valor ⬇</option>
+              <option value="amount_asc">📉 Menor Valor ➔ Maior Valor ⬆</option>
+              <option value="description_asc">🔤 Descrição (A - Z)</option>
+            </select>
+          </div>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-          {[
-            { id: 'ALL', label: 'Todos' },
-            { id: 'INCOME', label: 'Receitas' },
-            { id: 'EXPENSE', label: 'Despesas' },
-            { id: 'CREDIT', label: 'Cartão de Crédito' },
-            { id: 'TRANSFER', label: 'Transferências' },
-          ].map((pill) => (
-            <button
-              key={pill.id}
-              onClick={() => setTypeFilter(pill.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                typeFilter === pill.id
-                  ? 'bg-blue-600 text-white font-bold'
-                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-              }`}
-            >
-              {pill.label}
-            </button>
-          ))}
+        {/* Filter Pills: Type & Amount */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <span className="text-[11px] text-slate-400 font-semibold mr-1">Tipo:</span>
+            {[
+              { id: 'ALL', label: 'Todos' },
+              { id: 'INCOME', label: 'Receitas' },
+              { id: 'EXPENSE', label: 'Despesas' },
+              { id: 'CREDIT', label: 'Cartão de Crédito' },
+              { id: 'TRANSFER', label: 'Transferências' },
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setTypeFilter(pill.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  typeFilter === pill.id
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Amount Filter Pills */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-400 font-semibold mr-1">Valor:</span>
+            {[
+              { id: 'ALL', label: 'Qualquer' },
+              { id: 'GT_100', label: '> R$ 100' },
+              { id: 'GT_500', label: '> R$ 500' },
+              { id: 'GT_1000', label: '> R$ 1.000' },
+            ].map((af) => (
+              <button
+                key={af.id}
+                onClick={() => setAmountFilter(af.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  amountFilter === af.id
+                    ? 'bg-purple-600 text-white font-bold'
+                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                {af.label}
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
 
@@ -319,12 +385,36 @@ export default function TransactionsPage() {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Data</th>
-                <th className="py-3 px-4">Descrição</th>
+                <th
+                  onClick={() => handleToggleSort('date')}
+                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Data</span>
+                    {sortBy === 'date' && (sortOrder === 'desc' ? ' ↓' : ' ↑')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleToggleSort('description')}
+                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Descrição</span>
+                    {sortBy === 'description' && (sortOrder === 'desc' ? ' ↓' : ' ↑')}
+                  </div>
+                </th>
                 <th className="py-3 px-4">Categoria</th>
                 <th className="py-3 px-4">Conta / Cartão</th>
                 <th className="py-3 px-4">Tipo</th>
-                <th className="py-3 px-4 text-right">Valor</th>
+                <th
+                  onClick={() => handleToggleSort('amount')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-white transition-colors"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Valor</span>
+                    {sortBy === 'amount' && (sortOrder === 'desc' ? ' ⬇' : ' ⬆')}
+                  </div>
+                </th>
                 <th className="py-3 px-4 text-center">Ações</th>
               </tr>
             </thead>

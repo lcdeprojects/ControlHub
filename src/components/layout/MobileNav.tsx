@@ -10,6 +10,7 @@ import {
   Layers,
   Menu,
   Landmark,
+  Film,
   Home,
   Target,
   TrendingUp,
@@ -30,13 +31,14 @@ export function MobileNav() {
   const mainItems = [
     { label: 'Início', href: '/', icon: LayoutDashboard },
     { label: 'Extrato', href: '/transactions', icon: ArrowLeftRight },
+    { label: 'Assinaturas', href: '/subscriptions', icon: Film },
     { label: 'Cartões', href: '/credit-cards', icon: CreditCard },
-    { label: 'Parcelas', href: '/installments', icon: Layers },
   ];
 
   const baseModules = [
     { label: 'Painel Geral', href: '/', icon: LayoutDashboard, desc: 'Visão executiva e KPIs' },
     { label: 'Extrato & Transações', href: '/transactions', icon: ArrowLeftRight, desc: 'Lançamentos e conciliação' },
+    { label: 'Assinaturas & Recorrências', href: '/subscriptions', icon: Film, desc: 'Netflix, Claude, Spotify e débitos' },
     { label: 'Minhas Contas', href: '/accounts', icon: Landmark, desc: 'Saldos bancários e transferências' },
     { label: 'Cartões de Crédito', href: '/credit-cards', icon: CreditCard, desc: 'Limites, faturas e fechamentos' },
     { label: 'Compras Parceladas', href: '/installments', icon: Layers, desc: 'Cronogramas e renda liberada' },

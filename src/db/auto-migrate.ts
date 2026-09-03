@@ -356,6 +356,30 @@ export async function ensureDatabaseSchema() {
         );
       `);
 
+      // 11b. Subscriptions
+      await db.run(sql`
+        CREATE TABLE IF NOT EXISTS subscriptions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          logo_url TEXT,
+          icon TEXT DEFAULT 'film',
+          color TEXT DEFAULT '#e50914',
+          amount REAL NOT NULL,
+          currency TEXT NOT NULL DEFAULT 'BRL',
+          billing_cycle TEXT NOT NULL DEFAULT 'MONTHLY',
+          billing_day INTEGER NOT NULL DEFAULT 1,
+          account_id TEXT REFERENCES accounts(id),
+          credit_card_id TEXT REFERENCES credit_cards(id),
+          category_id TEXT REFERENCES categories(id),
+          status TEXT NOT NULL DEFAULT 'ACTIVE',
+          next_billing_date TEXT,
+          notes TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // 12. Budgets
       await db.run(sql`
         CREATE TABLE IF NOT EXISTS budgets (

@@ -10,6 +10,7 @@ import {
   Receipt,
   Layers,
   Landmark,
+  Film,
   Home,
   Target,
   PiggyBank,
@@ -33,6 +34,7 @@ interface NavItem {
 const baseNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'Transações', href: '/transactions', icon: ArrowLeftRight },
+  { label: 'Assinaturas', href: '/subscriptions', icon: Film, badge: 'Novo' },
   { label: 'Meus Cartões', href: '/credit-cards', icon: CreditCard },
   { label: 'Faturas', href: '/credit-cards#faturas', icon: Receipt },
   { label: 'Parcelamentos', href: '/installments', icon: Layers, badge: 'Projeção' },

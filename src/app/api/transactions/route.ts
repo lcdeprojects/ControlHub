@@ -5,7 +5,7 @@ import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
 import { normalizeTransactionDescription } from '@/lib/engines/matching-algorithm';
 import { calculateInvoiceCycle } from '@/lib/engines/invoice-cycle';
 import { generateInstallments } from '@/lib/engines/installment-engine';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, asc, gte, lte, and, SQL } from 'drizzle-orm';
 import { getAuthUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +14,31 @@ export async function GET(request: Request) {
   try {
     await ensureDatabaseSchema();
     const userId = await getAuthUserId(request);
+    const { searchParams } = new URL(request.url);
+
+    const sortBy = searchParams.get('sortBy') || 'date'; // 'date' | 'amount' | 'description'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'; // 'desc' | 'asc'
+    const minAmount = searchParams.get('minAmount');
+    const maxAmount = searchParams.get('maxAmount');
+
+    const conditions: SQL[] = [eq(s.transactions.userId, userId)];
+
+    if (minAmount && !isNaN(Number(minAmount))) {
+      conditions.push(gte(s.transactions.amount, Number(minAmount)));
+    }
+    if (maxAmount && !isNaN(Number(maxAmount))) {
+      conditions.push(lte(s.transactions.amount, Number(maxAmount)));
+    }
+
+    let orderExpr = desc(s.transactions.transactionDate);
+    if (sortBy === 'amount') {
+      orderExpr = sortOrder === 'asc' ? asc(s.transactions.amount) : desc(s.transactions.amount);
+    } else if (sortBy === 'description') {
+      orderExpr = sortOrder === 'asc' ? asc(s.transactions.description) : desc(s.transactions.description);
+    } else if (sortBy === 'date') {
+      orderExpr = sortOrder === 'asc' ? asc(s.transactions.transactionDate) : desc(s.transactions.transactionDate);
+    }
+
     const list = await db
       .select({
         id: s.transactions.id,
@@ -36,8 +61,8 @@ export async function GET(request: Request) {
       .leftJoin(s.categories, eq(s.transactions.categoryId, s.categories.id))
       .leftJoin(s.accounts, eq(s.transactions.accountId, s.accounts.id))
       .leftJoin(s.creditCards, eq(s.transactions.creditCardId, s.creditCards.id))
-      .where(eq(s.transactions.userId, userId))
-      .orderBy(desc(s.transactions.transactionDate));
+      .where(and(...conditions))
+      .orderBy(orderExpr);
 
     return NextResponse.json({ success: true, transactions: list });
   } catch (error) {

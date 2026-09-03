@@ -8,6 +8,8 @@ import { usePeriod } from '@/contexts/PeriodContext';
 
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 
+import { MobileQuickAddDrawer } from '../transactions/MobileQuickAddDrawer';
+
 interface QuickActionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +18,7 @@ interface QuickActionModalProps {
 
 export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModalProps) {
   const { defaultDateForPeriod } = usePeriod();
+  const [isExpressMode, setIsExpressMode] = useState(false);
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -86,6 +89,22 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
     }
   }, [type, categories]);
 
+  if (isExpressMode) {
+    return (
+      <MobileQuickAddDrawer
+        isOpen={isOpen}
+        onClose={() => {
+          setIsExpressMode(false);
+          onClose();
+        }}
+        onSuccess={() => {
+          onSuccess?.();
+          setIsExpressMode(false);
+        }}
+      />
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount) return;
@@ -131,6 +150,17 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
       description="Cadastre receitas, despesas à vista, compras no cartão ou transferências."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Switch to Express Mode Button */}
+        <div className="flex items-center justify-end mb-1">
+          <button
+            type="button"
+            onClick={() => setIsExpressMode(true)}
+            className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <span>📱 Ativar Teclado Rápido (Express)</span>
+          </button>
+        </div>
+
         {/* Type Selector Tabs */}
         <div className="grid grid-cols-4 gap-2 p-1 bg-zinc-950 rounded-xl border border-zinc-800 text-xs font-semibold">
           <button
