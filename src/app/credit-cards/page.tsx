@@ -48,6 +48,8 @@ export default function CreditCardsPage() {
   // Modal States
   const [selectedCardForInvoice, setSelectedCardForInvoice] = useState<CreditCardData | null>(null);
   const [selectedCardForPayment, setSelectedCardForPayment] = useState<CreditCardData | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceDetailItem[]>([]);
+  const [loadingInvoiceItems, setLoadingInvoiceItems] = useState(false);
 
   const fetchCards = async () => {
     try {
@@ -67,6 +69,28 @@ export default function CreditCardsPage() {
   useEffect(() => {
     fetchCards();
   }, [month, year]);
+
+  useEffect(() => {
+    if (selectedCardForInvoice) {
+      setLoadingInvoiceItems(true);
+      fetch(`/api/cards/${selectedCardForInvoice.id}/items?month=${month}&year=${year}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.items) {
+            setInvoiceItems(data.items);
+          } else {
+            setInvoiceItems([]);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching invoice items:', err);
+          setInvoiceItems([]);
+        })
+        .finally(() => setLoadingInvoiceItems(false));
+    } else {
+      setInvoiceItems([]);
+    }
+  }, [selectedCardForInvoice, month, year]);
 
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -499,7 +523,7 @@ export default function CreditCardsPage() {
           dueDate={`2026-${String(month).padStart(2, '0')}-${String(selectedCardForInvoice.dueDay).padStart(2, '0')}`}
           status="OPEN"
           totalAmount={selectedCardForInvoice.currentInvoiceAmount}
-          items={sampleInvoiceItems}
+          items={invoiceItems}
           onPay={() => {
             setSelectedCardForPayment(selectedCardForInvoice);
             setSelectedCardForInvoice(null);
