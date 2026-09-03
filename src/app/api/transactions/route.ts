@@ -173,6 +173,12 @@ export async function POST(request: Request) {
           installmentNumber: it.installmentNumber,
         });
 
+        const purchaseDay = transactionDate.slice(8, 10);
+        const instMonthStr = String(it.billingMonth).padStart(2, '0');
+        const maxDaysInInstMonth = new Date(it.billingYear, it.billingMonth, 0).getDate();
+        const validDay = Math.min(parseInt(purchaseDay, 10), maxDaysInInstMonth);
+        const instDateStr = `${it.billingYear}-${instMonthStr}-${String(validDay).padStart(2, '0')}`;
+
         await db.insert(s.transactions).values({
           id: transId,
           userId,
@@ -181,7 +187,7 @@ export async function POST(request: Request) {
           installmentId: instId,
           transactionType: 'INSTALLMENT',
           amount: it.amount,
-          transactionDate,
+          transactionDate: instDateStr,
           competenceMonth: it.billingMonth,
           competenceYear: it.billingYear,
           billingMonth: it.billingMonth,

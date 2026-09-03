@@ -5,7 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 export const metadata: Metadata = {
-  title: 'ControlHub — Gestão Financeira Pessoal & Cartões de Crédito',
+  title: 'ControlHub — Gestão Financeira Pessoal',
   description: 'Sistema completo e inteligente de controle financeiro, faturas, parcelamentos, patrimônio e importações.',
   icons: {
     icon: [

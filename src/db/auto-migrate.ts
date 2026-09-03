@@ -494,6 +494,7 @@ export async function ensureDatabaseSchema() {
       // --- Reparos Estruturais para Bancos Legados ---
       await repairCreditCardsTable();
       await repairInvoicesTable();
+      await repairInstallmentDates();
 
       // --- Migrações Incrementais (Garante colunas em bancos já existentes) ---
       // Credit Cards
@@ -715,5 +716,29 @@ async function deduplicateCategories() {
     }
   } catch (err) {
     console.error('Error deduplicating categories:', err);
+  }
+}
+
+async function repairInstallmentDates() {
+  try {
+    const list: any[] = await db.all(
+      sql`SELECT id, transaction_date, billing_month, billing_year FROM transactions WHERE transaction_type = 'INSTALLMENT' AND billing_month IS NOT NULL AND billing_year IS NOT NULL`
+    );
+
+    for (const t of list) {
+      if (!t.transaction_date) continue;
+      const day = t.transaction_date.slice(8, 10) || '01';
+      const mStr = String(t.billing_month).padStart(2, '0');
+      const expectedPrefix = `${t.billing_year}-${mStr}`;
+
+      if (!t.transaction_date.startsWith(expectedPrefix)) {
+        const maxDays = new Date(t.billing_year, t.billing_month, 0).getDate();
+        const validDay = Math.min(parseInt(day, 10), maxDays);
+        const correctDate = `${t.billing_year}-${mStr}-${String(validDay).padStart(2, '0')}`;
+        await db.run(sql`UPDATE transactions SET transaction_date = ${correctDate} WHERE id = ${t.id}`);
+      }
+    }
+  } catch (err) {
+    console.error('Error repairing installment dates:', err);
   }
 }
