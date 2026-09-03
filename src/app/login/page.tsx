@@ -82,13 +82,6 @@ export default function LoginPage() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-medium text-zinc-300">Senha / PIN de Acesso</label>
-              <button
-                type="button"
-                onClick={() => setIsForgotOpen(true)}
-                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
-              >
-                Esqueci minha senha
-              </button>
             </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
@@ -100,6 +93,13 @@ export default function LoginPage() {
                 placeholder="Digite sua senha ou PIN"
                 className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
+              <button
+                type="button"
+                onClick={() => setIsForgotOpen(true)}
+                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
+              >
+                Esqueci minha senha
+              </button>
             </div>
           </div>
 
