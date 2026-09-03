@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { LogIn, Lock, Mail, UserCheck, Fingerprint } from 'lucide-react';
+import { LogIn, Lock, Mail, UserCheck } from 'lucide-react';
 import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
 
 export default function LoginPage() {
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
-  const [biometricLoading, setBiometricLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -39,61 +38,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleBiometricLogin = async () => {
-    setError('');
-    setBiometricLoading(true);
-
-    try {
-      const resOpts = await fetch('/api/auth/passkeys/login-options', { method: 'POST' });
-      const dataOpts = await resOpts.json();
-
-      if (!dataOpts.success || !dataOpts.options) {
-        setError(dataOpts.error || 'Falha ao solicitar login biométrico.');
-        return;
-      }
-
-      let credentialId = '';
-
-      if (typeof window !== 'undefined' && 'credentials' in navigator && window.PublicKeyCredential) {
-        try {
-          const opts = dataOpts.options;
-          const challengeBuf = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
-
-          const assertion = (await navigator.credentials.get({
-            publicKey: {
-              ...opts,
-              challenge: challengeBuf,
-            },
-          })) as PublicKeyCredential;
-
-          if (assertion) {
-            credentialId = assertion.id;
-          }
-        } catch (err) {
-          console.warn('Browser WebAuthn assertion prompt bypassed, using saved passkey ticket:', err);
-        }
-      }
-
-      const resVerify = await fetch('/api/auth/passkeys/login-verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credentialId }),
-      });
-
-      const dataVerify = await resVerify.json();
-      if (dataVerify.success) {
-        window.location.href = '/';
-      } else {
-        setError(dataVerify.error || 'Erro na verificação biométrica. Tente entrar com o PIN.');
-      }
-    } catch (err: any) {
-      console.error('Biometric login error:', err);
-      setError('Erro na leitura da biometria. Use o e-mail e PIN.');
-    } finally {
-      setBiometricLoading(false);
-    }
-  };
-
   return (
     <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
       {/* Brand Header */}
@@ -116,28 +60,6 @@ export default function LoginPage() {
             {error}
           </div>
         )}
-
-        {/* Biometric Quick Access Button */}
-        <div>
-          <button
-            type="button"
-            onClick={handleBiometricLogin}
-            disabled={biometricLoading}
-            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50"
-          >
-            <Fingerprint className="w-5 h-5 text-purple-200" />
-            <span>{biometricLoading ? 'Lendo FaceID / Impressão Digital...' : '🖐️ Entrar com FaceID / TouchID'}</span>
-          </button>
-
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-zinc-800" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-              <span className="bg-zinc-900 px-3 text-zinc-500">ou use e-mail e PIN</span>
-            </div>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -173,7 +95,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-sm transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-sm transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             {loading ? (
               <span>Entrando...</span>
