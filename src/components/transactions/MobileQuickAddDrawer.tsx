@@ -322,9 +322,6 @@ export function MobileQuickAddDrawer({
                   type="button"
                   onClick={() => {
                     setSelectedCategory(c.id);
-                    if (!description) {
-                      setDescription(c.name);
-                    }
                   }}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isSelected
