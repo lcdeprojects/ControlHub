@@ -6,6 +6,7 @@ import { IncomeExpenseChart } from '@/components/dashboard/IncomeExpenseChart';
 import { CategoryDonutChart } from '@/components/dashboard/CategoryDonutChart';
 import { NetWorthChart } from '@/components/dashboard/NetWorthChart';
 import { SmartAlerts } from '@/components/dashboard/SmartAlerts';
+import { GettingStartedCard } from '@/components/dashboard/GettingStartedCard';
 import { Card } from '@/components/ui/Card';
 import { formatMonthYear } from '@/lib/utils';
 import { Eye, DollarSign, ArrowUpRight, Layers, CreditCard, Sparkles } from 'lucide-react';
@@ -105,6 +106,9 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Getting Started Guide */}
+      <GettingStartedCard />
 
       {/* Metric Cards */}
       <MetricCards viewMode={viewMode} data={metricData} />
