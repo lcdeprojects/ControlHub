@@ -40,6 +40,11 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
 
     setDate(defaultDateForPeriod);
 
+    // No mobile (< 768px), abre direto no modo Express QuickAdd
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsExpressMode(true);
+    }
+
     // Fetch dynamic options
     const fetchOptions = async () => {
       try {
@@ -101,6 +106,7 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
           onSuccess?.();
           setIsExpressMode(false);
         }}
+        onSwitchToFullForm={() => setIsExpressMode(false)}
       />
     );
   }

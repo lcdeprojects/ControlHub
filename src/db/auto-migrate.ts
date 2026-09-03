@@ -478,9 +478,15 @@ export async function ensureDatabaseSchema() {
       // Categories
       await addColumnIfNotExists('categories', 'parent_id', 'TEXT');
       await addColumnIfNotExists('categories', 'is_system', 'INTEGER DEFAULT 0');
+      await addColumnIfNotExists('categories', 'show_in_quick_add', 'INTEGER DEFAULT 0');
       await addColumnIfNotExists('categories', 'icon', "TEXT DEFAULT 'tag'");
       await addColumnIfNotExists('categories', 'color', "TEXT DEFAULT '#64748b'");
       await addColumnIfNotExists('categories', 'type', "TEXT DEFAULT 'EXPENSE'");
+
+      // Garantir que as 4 principais fiquem ativas no QuickModal por padrão
+      try {
+        await db.run(sql`UPDATE categories SET show_in_quick_add = 1 WHERE id IN ('cat_mercado', 'cat_restaurantes', 'cat_combustivel', 'cat_lazer') OR name LIKE '%Mercado%' OR name LIKE '%Restaurante%' OR name LIKE '%Combustível%' OR name LIKE '%Lazer%'`);
+      } catch {}
 
       // Invoices
       await addColumnIfNotExists('invoices', 'cycle_start_date', "TEXT NOT NULL DEFAULT ''");

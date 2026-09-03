@@ -8,10 +8,6 @@ import { formatCurrency } from '@/lib/utils';
 import {
   Film,
   Plus,
-  Tv,
-  Music,
-  Bot,
-  Cloud,
   Zap,
   Check,
   Pause,
@@ -19,29 +15,22 @@ import {
   Trash2,
   Pencil,
   Calendar,
-  CreditCard,
-  Wallet,
-  DollarSign,
   TrendingUp,
   Sparkles,
 } from 'lucide-react';
-import { CurrencyInput } from '@/components/ui/CurrencyInput';
 
 const PRESETS = [
-  { name: 'Netflix', icon: 'film', color: '#e50914', defaultAmount: 55.9, currency: 'BRL' },
-  { name: 'Claude Pro (Anthropic)', icon: 'bot', color: '#d97706', defaultAmount: 20, currency: 'USD' },
-  { name: 'ChatGPT Plus (OpenAI)', icon: 'bot', color: '#10b981', defaultAmount: 20, currency: 'USD' },
-  { name: 'Spotify Premium', icon: 'music', color: '#1db954', defaultAmount: 21.9, currency: 'BRL' },
-  { name: 'Amazon Prime', icon: 'tv', color: '#00a8e1', defaultAmount: 19.9, currency: 'BRL' },
-  { name: 'YouTube Premium', icon: 'tv', color: '#ff0000', defaultAmount: 24.9, currency: 'BRL' },
-  { name: 'iCloud Storage', icon: 'cloud', color: '#3b82f6', defaultAmount: 14.9, currency: 'BRL' },
+  { name: 'Netflix', color: '#e50914', defaultAmount: 55.9, currency: 'BRL' },
+  { name: 'Claude Pro (Anthropic)', color: '#d97706', defaultAmount: 20, currency: 'USD' },
+  { name: 'ChatGPT Plus (OpenAI)', color: '#10b981', defaultAmount: 20, currency: 'USD' },
+  { name: 'Spotify Premium', color: '#1db954', defaultAmount: 21.9, currency: 'BRL' },
+  { name: 'Amazon Prime', color: '#00a8e1', defaultAmount: 19.9, currency: 'BRL' },
+  { name: 'YouTube Premium', color: '#ff0000', defaultAmount: 24.9, currency: 'BRL' },
+  { name: 'iCloud Storage', color: '#3b82f6', defaultAmount: 14.9, currency: 'BRL' },
 ];
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [creditCards, setCreditCards] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,40 +43,18 @@ export default function SubscriptionsPage() {
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
   const [billingDay, setBillingDay] = useState('5');
   const [color, setColor] = useState('#e50914');
-  const [accountId, setAccountId] = useState('');
-  const [creditCardId, setCreditCardId] = useState('');
-  const [categoryId, setCategoryId] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const usdRate = 5.6; // Taxa de conversão USD -> BRL estimada para cálculo visual
+  const usdRate = 5.6;
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [subRes, accRes, cardRes, catRes] = await Promise.all([
-        fetch('/api/subscriptions'),
-        fetch('/api/accounts'),
-        fetch('/api/credit-cards'),
-        fetch('/api/categories'),
-      ]);
-
-      const [subData, accData, cardData, catData] = await Promise.all([
-        subRes.json(),
-        accRes.json(),
-        cardRes.json(),
-        catRes.json(),
-      ]);
-
-      if (subData.success) setSubscriptions(subData.subscriptions || []);
-      if (accData.success) setAccounts(accData.accounts || []);
-      if (cardData.success) setCreditCards(cardData.creditCards || []);
-      if (catData.success) {
-        setCategories(catData.categories || []);
-        const subCat = catData.categories.find(
-          (c: any) => c.name.toLowerCase().includes('assinatura') || c.id === 'cat_assinaturas'
-        );
-        if (subCat) setCategoryId(subCat.id);
+      const res = await fetch('/api/subscriptions');
+      const data = await res.json();
+      if (data.success) {
+        setSubscriptions(data.subscriptions || []);
       }
     } catch (err) {
       console.error('Error loading subscriptions page:', err);
@@ -115,8 +82,6 @@ export default function SubscriptionsPage() {
     }
     setBillingCycle('MONTHLY');
     setBillingDay('5');
-    setAccountId('');
-    setCreditCardId('');
     setNotes('');
     setIsModalOpen(true);
   };
@@ -129,9 +94,6 @@ export default function SubscriptionsPage() {
     setBillingCycle(sub.billingCycle || 'MONTHLY');
     setBillingDay(sub.billingDay ? sub.billingDay.toString() : '5');
     setColor(sub.color || '#e50914');
-    setAccountId(sub.accountId || '');
-    setCreditCardId(sub.creditCardId || '');
-    setCategoryId(sub.categoryId || '');
     setNotes(sub.notes || '');
     setIsModalOpen(true);
   };
@@ -150,9 +112,6 @@ export default function SubscriptionsPage() {
         billingCycle,
         billingDay: parseInt(billingDay, 10),
         color,
-        accountId: accountId || null,
-        creditCardId: creditCardId || null,
-        categoryId: categoryId || null,
         notes,
       };
 
@@ -200,7 +159,7 @@ export default function SubscriptionsPage() {
     }
   };
 
-  // Cálculos de Resumo
+  // Resumos e Déditos
   const activeSubs = subscriptions.filter((s) => s.status === 'ACTIVE');
   const monthlyTotalBrl = activeSubs.reduce((sum, s) => {
     let val = s.amount;
@@ -227,7 +186,7 @@ export default function SubscriptionsPage() {
             Assinaturas & Recorrências
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Gerencie mensalidades (Netflix, Claude, ChatGPT, Spotify, etc.) com previsão de débito automático
+            Cadastre seus serviços recorrentes e acompanhe a previsão de gasto total por mês
           </p>
         </div>
 
@@ -245,7 +204,7 @@ export default function SubscriptionsPage() {
         <div className="flex items-center justify-between gap-2 mb-2.5">
           <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            Adicionar Rápido via Modelo:
+            Criar Rápido via Modelo:
           </span>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -253,7 +212,7 @@ export default function SubscriptionsPage() {
             <button
               key={preset.name}
               onClick={() => handleOpenCreate(preset)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 transition-all cursor-pointer shrink-0 text-left"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 transition-all cursor-pointer shrink-0 text-left"
             >
               <div
                 className="w-3 h-3 rounded-full"
@@ -273,13 +232,13 @@ export default function SubscriptionsPage() {
         <Card className="p-4 bg-slate-900/60 border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-              Impacto Mensal Total
+              Débito Estimado por Mês
             </span>
             <h3 className="text-xl font-black text-rose-400 mt-1">
               {formatCurrency(monthlyTotalBrl)}
             </h3>
             <span className="text-[10px] text-slate-500 block mt-0.5">
-              Custo equivalente por mês
+              Descontado do total mensal
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
@@ -290,13 +249,13 @@ export default function SubscriptionsPage() {
         <Card className="p-4 bg-slate-900/60 border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-              Gasto Anual Estimado
+              Custo Anual Estimado
             </span>
             <h3 className="text-xl font-black text-amber-400 mt-1">
               {formatCurrency(yearlyTotalBrl)}
             </h3>
             <span className="text-[10px] text-slate-500 block mt-0.5">
-              Acumulado em 12 meses
+              Impacto acumulado em 12 meses
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
@@ -322,11 +281,11 @@ export default function SubscriptionsPage() {
         </Card>
       </div>
 
-      {/* Subscriptions Grid */}
+      {/* Subscriptions List */}
       <Card className="p-5">
         <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-300">Filtrar Status:</span>
+            <span className="text-xs font-bold text-slate-300">Filtrar:</span>
             {[
               { id: 'ALL', label: 'Todas' },
               { id: 'ACTIVE', label: 'Ativas' },
@@ -353,143 +312,118 @@ export default function SubscriptionsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((sub) => {
-              const accountName = sub.accountName || accounts.find((a) => a.id === sub.accountId)?.name;
-              const cardName = sub.cardName || creditCards.find((c) => c.id === sub.creditCardId)?.name;
-
-              return (
-                <div
-                  key={sub.id}
-                  className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${
-                    sub.status === 'PAUSED'
-                      ? 'bg-slate-950/40 border-slate-800/60 opacity-60'
-                      : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  {/* Top Bar: Icon + Name + Badge */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-md shrink-0"
-                        style={{ backgroundColor: sub.color || '#e50914' }}
-                      >
-                        {sub.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-white">{sub.name}</h4>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                          <Calendar className="w-3 h-3 text-slate-500" />
-                          <span>Todo dia {sub.billingDay}</span>
-                          <span>•</span>
-                          <span className="uppercase text-[10px] font-mono font-bold text-slate-400">
-                            {sub.billingCycle === 'YEARLY' ? 'Anual' : 'Mensal'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Badge variant={sub.status === 'ACTIVE' ? 'success' : 'default'}>
-                      {sub.status === 'ACTIVE' ? 'Ativa' : 'Pausada'}
-                    </Badge>
-                  </div>
-
-                  {/* Middle: Amount & Payment Source */}
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold block uppercase">
-                        Cobrança
-                      </span>
-                      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1 mt-0.5">
-                        {cardName ? (
-                          <>
-                            <CreditCard className="w-3 h-3 text-purple-400" />
-                            {cardName}
-                          </>
-                        ) : accountName ? (
-                          <>
-                            <Wallet className="w-3 h-3 text-emerald-400" />
-                            {accountName}
-                          </>
-                        ) : (
-                          'Débito Automático'
-                        )}
-                      </span>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-lg font-mono font-black text-white">
-                        {sub.currency === 'USD' ? `$ ${sub.amount}` : formatCurrency(sub.amount)}
-                      </span>
-                      {sub.currency === 'USD' && (
-                        <span className="text-[10px] text-amber-400 font-mono block">
-                          ≈ {formatCurrency(sub.amount * usdRate)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Bottom Controls */}
-                  <div className="flex items-center justify-between pt-1 text-xs">
-                    <button
-                      onClick={() => handleToggleStatus(sub)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
-                        sub.status === 'ACTIVE'
-                          ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                      }`}
+            {filtered.map((sub) => (
+              <div
+                key={sub.id}
+                className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${
+                  sub.status === 'PAUSED'
+                    ? 'bg-slate-950/40 border-slate-800/60 opacity-60'
+                    : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                {/* Top Bar: Color Avatar + Name + Badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-md shrink-0"
+                      style={{ backgroundColor: sub.color || '#e50914' }}
                     >
-                      {sub.status === 'ACTIVE' ? (
-                        <>
-                          <Pause className="w-3.5 h-3.5" /> Pausar
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-3.5 h-3.5" /> Ativar
-                        </>
-                      )}
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenEdit(sub)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Editar Assinatura"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(sub.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Excluir Assinatura"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {sub.name.slice(0, 2).toUpperCase()}
                     </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{sub.name}</h4>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                        <Calendar className="w-3 h-3 text-slate-500" />
+                        <span>Dia {sub.billingDay} do mês</span>
+                        <span>•</span>
+                        <span className="uppercase text-[10px] font-mono font-bold text-slate-400">
+                          {sub.billingCycle === 'YEARLY' ? 'Anual' : 'Mensal'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Badge variant={sub.status === 'ACTIVE' ? 'success' : 'default'}>
+                    {sub.status === 'ACTIVE' ? 'Ativa' : 'Pausada'}
+                  </Badge>
+                </div>
+
+                {/* Middle: Amount Display */}
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-400">Débito no Saldo:</span>
+                  <div className="text-right">
+                    <span className="text-lg font-mono font-black text-white">
+                      {sub.currency === 'USD' ? `$ ${sub.amount}` : formatCurrency(sub.amount)}
+                    </span>
+                    {sub.currency === 'USD' && (
+                      <span className="text-[10px] text-amber-400 font-mono block">
+                        ≈ {formatCurrency(sub.amount * usdRate)}
+                      </span>
+                    )}
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Bottom Controls */}
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <button
+                    onClick={() => handleToggleStatus(sub)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
+                      sub.status === 'ACTIVE'
+                        ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                    }`}
+                  >
+                    {sub.status === 'ACTIVE' ? (
+                      <>
+                        <Pause className="w-3.5 h-3.5" /> Pausar
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5" /> Ativar
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleOpenEdit(sub)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Editar Assinatura"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(sub.id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Excluir Assinatura"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Card>
 
-      {/* Modal Nova / Editar Assinatura */}
+      {/* Modal Simples Nova / Editar Assinatura */}
       {isModalOpen && (
         <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          title={editingSub ? 'Editar Assinatura' : 'Cadastrar Assinatura'}
-          description="Configure os detalhes do serviço recorrente e vinculação de cobrança."
+          title={editingSub ? 'Editar Assinatura' : 'Criar Assinatura'}
+          description="Informe o nome e o valor. O impacto será abatido no saldo do mês automaticamente."
         >
           <form onSubmit={handleSave} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nome do Serviço / Assinatura *
+                Nome do Serviço *
               </label>
               <input
                 type="text"
                 required
-                placeholder="Ex: Netflix, Claude Pro, Spotify, iCloud..."
+                placeholder="Ex: Netflix, Claude Pro, Spotify, ChatGPT..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none"
@@ -541,7 +475,7 @@ export default function SubscriptionsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Dia da Cobrança (1 a 31)
+                  Dia de Débito no Mês (1 a 31)
                 </label>
                 <input
                   type="number"
@@ -551,50 +485,6 @@ export default function SubscriptionsPage() {
                   onChange={(e) => setBillingDay(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Cartão de Crédito de Débito
-                </label>
-                <select
-                  value={creditCardId}
-                  onChange={(e) => {
-                    setCreditCardId(e.target.value);
-                    if (e.target.value) setAccountId('');
-                  }}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none"
-                >
-                  <option value="">-- NENHUM --</option>
-                  {creditCards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      💳 {card.name} ({card.bank})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Ou Conta Bancária
-                </label>
-                <select
-                  value={accountId}
-                  onChange={(e) => {
-                    setAccountId(e.target.value);
-                    if (e.target.value) setCreditCardId('');
-                  }}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none"
-                >
-                  <option value="">-- NENHUMA --</option>
-                  {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      🏦 {acc.name}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 

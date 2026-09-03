@@ -18,6 +18,7 @@ import {
   BarChart3,
   ChevronRight,
   ShieldCheck,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
@@ -47,6 +48,7 @@ export function MobileNav() {
     { label: 'Patrimônio & Ativos', href: '/net-worth', icon: TrendingUp, desc: 'Investimentos e bens' },
     { label: 'Importar Extratos', href: '/import', icon: FileSpreadsheet, desc: 'Planilhas XLS, XLSX e CSV' },
     { label: 'Relatórios DRE', href: '/reports', icon: BarChart3, desc: 'Consumo vs Fluxo de Caixa' },
+    { label: 'Categorias & Ajustes', href: '/settings', icon: Settings, desc: 'Personalizar categorias e atalhos mobile' },
   ];
 
   const allModules = user?.role === 'ADMIN'

@@ -18,6 +18,7 @@ import {
   FileSpreadsheet,
   BarChart3,
   ShieldCheck,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const baseNavItems: NavItem[] = [
   { label: 'Investimentos', href: '/net-worth#investimentos', icon: TrendingUp },
   { label: 'Importar Extrato', href: '/import', icon: FileSpreadsheet, badge: 'IA' },
   { label: 'Relatórios', href: '/reports', icon: BarChart3 },
+  { label: 'Categorias & Ajustes', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {

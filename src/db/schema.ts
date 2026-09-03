@@ -78,6 +78,7 @@ export const categories = sqliteTable('categories', {
   type: text('type').notNull().$type<'INCOME' | 'EXPENSE' | 'HOUSEHOLD' | 'INVESTMENT'>().default('EXPENSE'),
   isSystem: integer('is_system', { mode: 'boolean' }).default(false),
   parentId: text('parent_id'),
+  showInQuickAdd: integer('show_in_quick_add', { mode: 'boolean' }).default(false),
 });
 
 // 6. Merchants (Estabelecimentos Normalizados)
