@@ -8,19 +8,23 @@ import {
   ChevronRight,
   LogOut,
   User as UserIcon,
+  RefreshCw,
 } from 'lucide-react';
 import { formatMonthYear } from '@/lib/utils';
 import { QuickActionModal } from '../dashboard/QuickActionModal';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import Link from 'next/link';
-
 import { ControlHubLogo } from '../ui/ControlHubLogo';
 
 export function Header() {
   const { month, year, nextMonth, prevMonth } = usePeriod();
   const { user, logout } = useAuth();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const { isSyncing, triggerSync } = useBackgroundSync({
+    enabled: Boolean(user),
+  });
 
   return (
     <>
@@ -30,8 +34,8 @@ export function Header() {
           <ControlHubLogo size="sm" showText={true} />
         </div>
 
-        {/* Competence Period Selector */}
-        <div className="flex items-center">
+        {/* Competence Period Selector + Sync Indicator */}
+        <div className="flex items-center gap-3">
           <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl p-1 shadow-inner">
             <button
               onClick={prevMonth}
@@ -52,6 +56,21 @@ export function Header() {
               <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
+
+          {/* Auto-Sync Live Status Pill */}
+          <button
+            type="button"
+            onClick={() => triggerSync('manual_click')}
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-[11px] font-medium text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
+            title="Sincronização inteligente em segundo plano ativa. Clique para recarregar agora."
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>{isSyncing ? 'Sincronizando...' : 'Auto-Sync ON'}</span>
+            <RefreshCw className={`w-3 h-3 text-zinc-500 ${isSyncing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
 
         {/* Global Actions & User Profile */}

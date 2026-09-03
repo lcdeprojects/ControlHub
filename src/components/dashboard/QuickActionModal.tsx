@@ -9,6 +9,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 
 import { MobileQuickAddDrawer } from '../transactions/MobileQuickAddDrawer';
+import { notifyDataChanged } from '@/lib/events/sync-event';
 
 interface QuickActionModalProps {
   isOpen: boolean;
@@ -134,12 +135,12 @@ export function QuickActionModal({ isOpen, onClose, onSuccess }: QuickActionModa
       });
 
       if (res.ok) {
+        notifyDataChanged('new_transaction');
         onSuccess?.();
         onClose();
         setDescription('');
         setAmount('');
         setInstallmentCount('1');
-        window.location.reload();
       }
     } catch (err) {
       console.error(err);

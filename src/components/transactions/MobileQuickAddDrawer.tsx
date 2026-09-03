@@ -23,6 +23,7 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { notifyDataChanged } from '@/lib/events/sync-event';
 
 interface MobileQuickAddDrawerProps {
   isOpen: boolean;
@@ -165,6 +166,7 @@ export function MobileQuickAddDrawer({
 
       const data = await res.json();
       if (data.success) {
+        notifyDataChanged('express_transaction');
         setRawAmount('');
         setDescription('');
         onSuccess();
