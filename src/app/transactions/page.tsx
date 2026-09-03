@@ -7,7 +7,6 @@ import { Modal } from '@/components/ui/Modal';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   Search,
-  Filter,
   ArrowUpRight,
   ArrowDownRight,
   CreditCard,
@@ -20,6 +19,9 @@ import {
   Check,
   MoreVertical,
   Wallet,
+  CheckSquare,
+  Square,
+  X,
 } from 'lucide-react';
 import { QuickActionModal } from '@/components/dashboard/QuickActionModal';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
@@ -35,6 +37,10 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Batch Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
   // Edit State
   const [editingTransaction, setEditingTransaction] = useState<any | null>(null);
@@ -76,6 +82,82 @@ export default function TransactionsPage() {
   useEffect(() => {
     fetchTransactions();
   }, [sortBy, sortOrder]);
+
+  const filtered = transactions.filter((t) => {
+    const matchesSearch =
+      t.description.toLowerCase().includes(search.toLowerCase()) ||
+      (t.categoryName && t.categoryName.toLowerCase().includes(search.toLowerCase())) ||
+      (t.accountName && t.accountName.toLowerCase().includes(search.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (typeFilter === 'INCOME' && t.transactionType !== 'INCOME') return false;
+    if (typeFilter === 'EXPENSE' && t.transactionType !== 'EXPENSE') return false;
+    if (typeFilter === 'CREDIT' && t.transactionType !== 'CREDIT_CARD_PURCHASE' && t.transactionType !== 'INSTALLMENT') return false;
+    if (typeFilter === 'TRANSFER' && t.transactionType !== 'TRANSFER') return false;
+
+    if (amountFilter === 'GT_100' && t.amount < 100) return false;
+    if (amountFilter === 'GT_500' && t.amount < 500) return false;
+    if (amountFilter === 'GT_1000' && t.amount < 1000) return false;
+
+    return true;
+  });
+
+  // Batch Selection Handlers
+  const isAllSelected = filtered.length > 0 && filtered.every((t) => selectedIds.includes(t.id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((t) => t.id));
+    }
+  };
+
+  const handleToggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const count = selectedIds.length;
+    if (
+      !confirm(
+        `Tem certeza que deseja excluir ${count} lançamento(s) selecionado(s)? Os saldos serão estornados automaticamente.`
+      )
+    ) {
+      return;
+    }
+
+    setIsBatchDeleting(true);
+    try {
+      const res = await fetch('/api/transactions/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSelectedIds([]);
+        await fetchTransactions();
+      } else {
+        alert(data.error || 'Erro ao excluir transações em lote.');
+      }
+    } catch (err) {
+      console.error('Batch delete error:', err);
+      alert('Falha de conexão.');
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
+
+  const selectedTotalSum = filtered
+    .filter((t) => selectedIds.includes(t.id))
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const handleOpenEdit = (t: any) => {
     setEditingTransaction(t);
@@ -122,6 +204,7 @@ export default function TransactionsPage() {
         method: 'DELETE',
       });
       if (res.ok) {
+        setSelectedIds((prev) => prev.filter((item) => item !== id));
         await fetchTransactions();
       }
     } catch (err) {
@@ -130,26 +213,6 @@ export default function TransactionsPage() {
       setDeletingId(null);
     }
   };
-
-  const filtered = transactions.filter((t) => {
-    const matchesSearch =
-      t.description.toLowerCase().includes(search.toLowerCase()) ||
-      (t.categoryName && t.categoryName.toLowerCase().includes(search.toLowerCase())) ||
-      (t.accountName && t.accountName.toLowerCase().includes(search.toLowerCase()));
-
-    if (!matchesSearch) return false;
-
-    if (typeFilter === 'INCOME' && t.transactionType !== 'INCOME') return false;
-    if (typeFilter === 'EXPENSE' && t.transactionType !== 'EXPENSE') return false;
-    if (typeFilter === 'CREDIT' && t.transactionType !== 'CREDIT_CARD_PURCHASE' && t.transactionType !== 'INSTALLMENT') return false;
-    if (typeFilter === 'TRANSFER' && t.transactionType !== 'TRANSFER') return false;
-
-    if (amountFilter === 'GT_100' && t.amount < 100) return false;
-    if (amountFilter === 'GT_500' && t.amount < 500) return false;
-    if (amountFilter === 'GT_1000' && t.amount < 1000) return false;
-
-    return true;
-  });
 
   const handleToggleSort = (field: 'date' | 'amount' | 'description') => {
     if (sortBy === field) {
@@ -221,13 +284,13 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 md:pb-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-white">Extrato de Transações</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Gerencie, edite ou exclua lançamentos com rastreabilidade e integridade automática de saldo
+            Gerencie, edite ou exclua múltiplos lançamentos em lote com integridade automática de saldo
           </p>
         </div>
         <button
@@ -238,6 +301,45 @@ export default function TransactionsPage() {
           <span>Novo Lançamento</span>
         </button>
       </div>
+
+      {/* Floating / Sticky Batch Action Bar when items selected */}
+      {selectedIds.length > 0 && (
+        <div className="sticky top-4 z-30 p-4 bg-slate-900/95 border border-rose-500/40 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center justify-between gap-4 flex-wrap animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs shrink-0">
+              {selectedIds.length}
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">
+                {selectedIds.length} transação(ões) selecionada(s)
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">
+                Soma total: <strong className="text-rose-400">{formatCurrency(selectedTotalSum)}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-colors"
+            >
+              Limpar Seleção
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBatchDelete}
+              disabled={isBatchDeleting}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 cursor-pointer disabled:opacity-50 transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{isBatchDeleting ? 'Excluindo...' : `Excluir Selecionadas (${selectedIds.length})`}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters Bar */}
       <Card className="p-4 space-y-3">
@@ -385,9 +487,18 @@ export default function TransactionsPage() {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
+                <th className="py-3 px-3 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleToggleSelectAll}
+                    className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    title="Selecionar / Desmarcar Todos"
+                  />
+                </th>
                 <th
                   onClick={() => handleToggleSort('date')}
-                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                  className="py-3 px-3 cursor-pointer hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1">
                     <span>Data</span>
@@ -396,61 +507,216 @@ export default function TransactionsPage() {
                 </th>
                 <th
                   onClick={() => handleToggleSort('description')}
-                  className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
+                  className="py-3 px-3 cursor-pointer hover:text-white transition-colors"
                 >
                   <div className="flex items-center gap-1">
                     <span>Descrição</span>
                     {sortBy === 'description' && (sortOrder === 'desc' ? ' ↓' : ' ↑')}
                   </div>
                 </th>
-                <th className="py-3 px-4">Categoria</th>
-                <th className="py-3 px-4">Conta / Cartão</th>
-                <th className="py-3 px-4">Tipo</th>
+                <th className="py-3 px-3">Categoria</th>
+                <th className="py-3 px-3">Conta / Cartão</th>
+                <th className="py-3 px-3">Tipo</th>
                 <th
                   onClick={() => handleToggleSort('amount')}
-                  className="py-3 px-4 text-right cursor-pointer hover:text-white transition-colors"
+                  className="py-3 px-3 text-right cursor-pointer hover:text-white transition-colors"
                 >
                   <div className="flex items-center justify-end gap-1">
                     <span>Valor</span>
                     {sortBy === 'amount' && (sortOrder === 'desc' ? ' ⬇' : ' ⬆')}
                   </div>
                 </th>
-                <th className="py-3 px-4 text-center">Ações</th>
+                <th className="py-3 px-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
                     Nenhum lançamento encontrado.
                   </td>
                 </tr>
               ) : (
-                filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-800/20 transition-colors">
-                    <td className="py-3 px-4 font-mono text-slate-400">
-                      {formatDate(t.transactionDate)}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-white max-w-xs truncate">
-                      {t.description}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="flex items-center gap-1.5 text-slate-300">
-                        <Tag className="w-3 h-3 text-slate-500" />
-                        {t.categoryName || 'Sem categoria'}
+                filtered.map((t) => {
+                  const isSelected = selectedIds.includes(t.id);
+
+                  return (
+                    <tr
+                      key={t.id}
+                      className={`transition-colors ${
+                        isSelected ? 'bg-blue-950/30' : 'hover:bg-slate-800/20'
+                      }`}
+                    >
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectOne(t.id)}
+                          className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+                      <td className="py-3 px-3 font-mono text-slate-400">
+                        {formatDate(t.transactionDate)}
+                      </td>
+                      <td className="py-3 px-3 font-medium text-white max-w-xs truncate">
+                        {t.description}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="flex items-center gap-1.5 text-slate-300">
+                          <Tag className="w-3 h-3 text-slate-500" />
+                          {t.categoryName || 'Sem categoria'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-400">
+                        {t.cardName ? (
+                          <span className="text-blue-400 font-medium">{t.cardName}</span>
+                        ) : (
+                          t.accountName || 'Conta Corrente'
+                        )}
+                      </td>
+                      <td className="py-3 px-3">{getTypeBadge(t.transactionType)}</td>
+                      <td className="py-3 px-3 text-right font-mono font-bold">
+                        <span
+                          className={
+                            t.transactionType === 'INCOME'
+                              ? 'text-emerald-400'
+                              : t.transactionType === 'EXPENSE' ||
+                                t.transactionType === 'CREDIT_CARD_PURCHASE' ||
+                                t.transactionType === 'INSTALLMENT'
+                              ? 'text-rose-400'
+                              : 'text-slate-300'
+                          }
+                        >
+                          {t.transactionType === 'INCOME' ? '+' : '-'} {formatCurrency(t.amount)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEdit(t)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors cursor-pointer"
+                            title="Editar lançamento"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(t.id)}
+                            disabled={deletingId === t.id}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+                            title="Excluir lançamento"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards View with Select Checkbox */}
+        <div className="block md:hidden divide-y divide-slate-800/60">
+          {filtered.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              Nenhum lançamento encontrado.
+            </div>
+          ) : (
+            filtered.map((t) => {
+              const isSelected = selectedIds.includes(t.id);
+
+              return (
+                <div
+                  key={t.id}
+                  className={`p-4 space-y-2.5 transition-colors relative ${
+                    isSelected ? 'bg-blue-950/30' : 'hover:bg-slate-900/40'
+                  }`}
+                >
+                  {/* Header: Select Checkbox + Date + Badge + Dropdown Menu (...) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectOne(t.id)}
+                        className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span className="text-[11px] font-mono text-slate-400">
+                        {formatDate(t.transactionDate)}
                       </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">
-                      {t.cardName ? (
-                        <span className="text-blue-400 font-medium">{t.cardName}</span>
-                      ) : (
-                        t.accountName || 'Conta Corrente'
+                      {getTypeBadge(t.transactionType)}
+                    </div>
+
+                    {/* Action Menu (...) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === t.id ? null : t.id)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Opções"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {openMenuId === t.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className="absolute right-0 top-8 z-20 w-36 py-1 bg-slate-900 border border-slate-700 rounded-xl shadow-xl space-y-0.5">
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleOpenEdit(t);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-blue-400 transition-colors text-left cursor-pointer"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-blue-400" />
+                              <span>Editar</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleDelete(t.id);
+                              }}
+                              disabled={deletingId === t.id}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Excluir</span>
+                            </button>
+                          </div>
+                        </>
                       )}
-                    </td>
-                    <td className="py-3 px-4">{getTypeBadge(t.transactionType)}</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold">
+                    </div>
+                  </div>
+
+                  {/* Body: Description + Badges & Amount */}
+                  <div className="flex items-baseline justify-between gap-3 pt-1">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <h4 className="text-sm font-bold text-white truncate">{t.description}</h4>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400 flex-wrap">
+                        <span className="flex items-center gap-1 text-slate-300">
+                          <Tag className="w-3 h-3 text-slate-500" />
+                          {t.categoryName || 'Sem categoria'}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-400">
+                          {t.cardName ? (
+                            <span className="text-blue-400 font-medium">{t.cardName}</span>
+                          ) : (
+                            t.accountName || 'Conta Corrente'
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
                       <span
-                        className={
+                        className={`text-base font-mono font-extrabold ${
                           t.transactionType === 'INCOME'
                             ? 'text-emerald-400'
                             : t.transactionType === 'EXPENSE' ||
@@ -458,138 +724,15 @@ export default function TransactionsPage() {
                               t.transactionType === 'INSTALLMENT'
                             ? 'text-rose-400'
                             : 'text-slate-300'
-                        }
+                        }`}
                       >
                         {t.transactionType === 'INCOME' ? '+' : '-'} {formatCurrency(t.amount)}
                       </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => handleOpenEdit(t)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors cursor-pointer"
-                          title="Editar lançamento"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(t.id)}
-                          disabled={deletingId === t.id}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
-                          title="Excluir lançamento"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards View */}
-        <div className="block md:hidden divide-y divide-slate-800/60">
-          {filtered.length === 0 ? (
-            <div className="py-8 text-center text-slate-500 text-xs">
-              Nenhum lançamento encontrado.
-            </div>
-          ) : (
-            filtered.map((t) => (
-              <div key={t.id} className="p-4 space-y-2.5 hover:bg-slate-900/40 transition-colors relative">
-                {/* Header: Date + Badge + Dropdown Menu (...) */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[11px] font-mono text-slate-400">
-                      {formatDate(t.transactionDate)}
-                    </span>
-                    {getTypeBadge(t.transactionType)}
-                  </div>
-
-                  {/* Action Menu (...) */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setOpenMenuId(openMenuId === t.id ? null : t.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Opções"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-
-                    {openMenuId === t.id && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setOpenMenuId(null)}
-                        />
-                        <div className="absolute right-0 top-8 z-20 w-36 py-1 bg-slate-900 border border-slate-700 rounded-xl shadow-xl space-y-0.5">
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              handleOpenEdit(t);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-blue-400 transition-colors text-left cursor-pointer"
-                          >
-                            <Pencil className="w-3.5 h-3.5 text-blue-400" />
-                            <span>Editar</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              handleDelete(t.id);
-                            }}
-                            disabled={deletingId === t.id}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Excluir</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Body: Description + Badges & Amount */}
-                <div className="flex items-baseline justify-between gap-3 pt-1">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <h4 className="text-sm font-bold text-white truncate">{t.description}</h4>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-400 flex-wrap">
-                      <span className="flex items-center gap-1 text-slate-300">
-                        <Tag className="w-3 h-3 text-slate-500" />
-                        {t.categoryName || 'Sem categoria'}
-                      </span>
-                      <span>•</span>
-                      <span className="text-slate-400">
-                        {t.cardName ? (
-                          <span className="text-blue-400 font-medium">{t.cardName}</span>
-                        ) : (
-                          t.accountName || 'Conta Corrente'
-                        )}
-                      </span>
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0">
-                    <span
-                      className={`text-base font-mono font-extrabold ${
-                        t.transactionType === 'INCOME'
-                          ? 'text-emerald-400'
-                          : t.transactionType === 'EXPENSE' ||
-                            t.transactionType === 'CREDIT_CARD_PURCHASE' ||
-                            t.transactionType === 'INSTALLMENT'
-                          ? 'text-rose-400'
-                          : 'text-slate-300'
-                      }`}
-                    >
-                      {t.transactionType === 'INCOME' ? '+' : '-'} {formatCurrency(t.amount)}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </Card>

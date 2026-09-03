@@ -17,6 +17,8 @@ import {
   Calendar,
   TrendingUp,
   Sparkles,
+  Wallet,
+  CreditCard,
 } from 'lucide-react';
 
 const PRESETS = [
@@ -31,6 +33,8 @@ const PRESETS = [
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [creditCards, setCreditCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,18 +47,32 @@ export default function SubscriptionsPage() {
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
   const [billingDay, setBillingDay] = useState('5');
   const [color, setColor] = useState('#e50914');
+  const [accountId, setAccountId] = useState('');
+  const [creditCardId, setCreditCardId] = useState('');
+  const [autoDebitCurrentMonth, setAutoDebitCurrentMonth] = useState(true);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [debitingId, setDebitingId] = useState<string | null>(null);
 
   const usdRate = 5.6;
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/subscriptions');
-      const data = await res.json();
-      if (data.success) {
-        setSubscriptions(data.subscriptions || []);
+      const [resSub, resAcc, resCard] = await Promise.all([
+        fetch('/api/subscriptions').then((r) => r.json()),
+        fetch('/api/accounts').then((r) => r.json()).catch(() => null),
+        fetch('/api/cards').then((r) => r.json()).catch(() => null),
+      ]);
+
+      if (resSub.success) {
+        setSubscriptions(resSub.subscriptions || []);
+      }
+      if (resAcc?.success) {
+        setAccounts(resAcc.accounts || []);
+      }
+      if (resCard?.success) {
+        setCreditCards(resCard.cards || []);
       }
     } catch (err) {
       console.error('Error loading subscriptions page:', err);
@@ -82,6 +100,9 @@ export default function SubscriptionsPage() {
     }
     setBillingCycle('MONTHLY');
     setBillingDay('5');
+    setAccountId(accounts.length > 0 ? accounts[0].id : '');
+    setCreditCardId('');
+    setAutoDebitCurrentMonth(true);
     setNotes('');
     setIsModalOpen(true);
   };
@@ -94,6 +115,9 @@ export default function SubscriptionsPage() {
     setBillingCycle(sub.billingCycle || 'MONTHLY');
     setBillingDay(sub.billingDay ? sub.billingDay.toString() : '5');
     setColor(sub.color || '#e50914');
+    setAccountId(sub.accountId || '');
+    setCreditCardId(sub.creditCardId || '');
+    setAutoDebitCurrentMonth(false);
     setNotes(sub.notes || '');
     setIsModalOpen(true);
   };
@@ -112,6 +136,9 @@ export default function SubscriptionsPage() {
         billingCycle,
         billingDay: parseInt(billingDay, 10),
         color,
+        accountId: accountId || null,
+        creditCardId: creditCardId || null,
+        autoDebitCurrentMonth,
         notes,
       };
 
@@ -132,6 +159,25 @@ export default function SubscriptionsPage() {
       console.error(err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDebitNow = async (sub: any) => {
+    setDebitingId(sub.id);
+    try {
+      const res = await fetch(`/api/subscriptions/${sub.id}/debit`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`🎉 ${data.message}`);
+        await fetchData();
+      } else {
+        alert(data.error || 'Erro ao lançar cobrança.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Falha de conexão.');
+    } finally {
+      setDebitingId(null);
     }
   };
 
@@ -159,7 +205,7 @@ export default function SubscriptionsPage() {
     }
   };
 
-  // Resumos e Déditos
+  // Resumos e Débitos
   const activeSubs = subscriptions.filter((s) => s.status === 'ACTIVE');
   const monthlyTotalBrl = activeSubs.reduce((sum, s) => {
     let val = s.amount;
@@ -186,7 +232,7 @@ export default function SubscriptionsPage() {
             Assinaturas & Recorrências
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Cadastre seus serviços recorrentes e acompanhe a previsão de gasto total por mês
+            Cadastre seus serviços recorrentes com débito automático no extrato do mês
           </p>
         </div>
 
@@ -238,7 +284,7 @@ export default function SubscriptionsPage() {
               {formatCurrency(monthlyTotalBrl)}
             </h3>
             <span className="text-[10px] text-slate-500 block mt-0.5">
-              Descontado do total mensal
+              Descontado no extrato mensal
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
@@ -363,8 +409,19 @@ export default function SubscriptionsPage() {
                   </div>
                 </div>
 
+                {/* Debitar no Extrato Action Button */}
+                <button
+                  type="button"
+                  onClick={() => handleDebitNow(sub)}
+                  disabled={debitingId === sub.id || sub.status === 'PAUSED'}
+                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{debitingId === sub.id ? 'Debitando...' : '⚡ Debitar no Extrato do Mês'}</span>
+                </button>
+
                 {/* Bottom Controls */}
-                <div className="flex items-center justify-between pt-1 text-xs">
+                <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-800/60">
                   <button
                     onClick={() => handleToggleStatus(sub)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
@@ -413,7 +470,7 @@ export default function SubscriptionsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           title={editingSub ? 'Editar Assinatura' : 'Criar Assinatura'}
-          description="Informe o nome e o valor. O impacto será abatido no saldo do mês automaticamente."
+          description="Informe o nome, valor e conta. A cobrança será lançada no extrato do mês."
         >
           <form onSubmit={handleSave} className="space-y-4">
             <div>
@@ -461,6 +518,50 @@ export default function SubscriptionsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Conta para Débito
+                </label>
+                <select
+                  value={accountId}
+                  onChange={(e) => {
+                    setAccountId(e.target.value);
+                    if (e.target.value) setCreditCardId('');
+                  }}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none"
+                >
+                  <option value="">Nenhuma / Conta Padrão</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} (R$ {acc.currentBalance})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Ou Cartão de Crédito
+                </label>
+                <select
+                  value={creditCardId}
+                  onChange={(e) => {
+                    setCreditCardId(e.target.value);
+                    if (e.target.value) setAccountId('');
+                  }}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none"
+                >
+                  <option value="">Nenhum Cartão</option>
+                  {creditCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Ciclo de Cobrança
                 </label>
                 <select
@@ -487,6 +588,25 @@ export default function SubscriptionsPage() {
                 />
               </div>
             </div>
+
+            {!editingSub && (
+              <div className="p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-bold text-white block">
+                    ⚡ Debitar no extrato deste mês agora
+                  </span>
+                  <span className="text-[11px] text-slate-400 block">
+                    Cria o lançamento no extrato e debita o saldo imediatamente.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={autoDebitCurrentMonth}
+                  onChange={(e) => setAutoDebitCurrentMonth(e.target.checked)}
+                  className="w-5 h-5 rounded bg-slate-900 border-slate-700 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
               <button
