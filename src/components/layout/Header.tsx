@@ -81,7 +81,7 @@ export function Header() {
           >
             <Plus className="w-4 h-4" />
             <span className="hidden xs:inline">Novo Lançamento</span>
-            <span className="xs:hidden">Novo</span>
+            <span className="xs:hidden">Novo Lançamento</span>
           </button>
 
           {/* Active User Badge & Logout */}

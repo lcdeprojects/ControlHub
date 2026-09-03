@@ -72,38 +72,10 @@ export default function DashboardPage() {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-widest">
               {formatMonthYear(month, year)}
             </span>
-            <span className="text-xs text-slate-400">Visão Financeira Executiva</span>
           </div>
           <h2 className="text-2xl font-black text-white mt-1">
-            Painel Geral de Controle
+            Visão Geral
           </h2>
-        </div>
-
-        {/* View Mode Toggle */}
-        <div className="grid grid-cols-1 sm:flex sm:items-center p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shadow-inner w-full md:w-auto gap-1">
-          <button
-            onClick={() => setViewMode('CONSUMPTION')}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer ${
-              viewMode === 'CONSUMPTION'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5 shrink-0" />
-            <span>Visão por Consumo (Competência)</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode('CASH_FLOW')}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer ${
-              viewMode === 'CASH_FLOW'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/25'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <DollarSign className="w-3.5 h-3.5 shrink-0" />
-            <span>Visão por Fluxo de Caixa (Realizado)</span>
-          </button>
         </div>
       </div>
 

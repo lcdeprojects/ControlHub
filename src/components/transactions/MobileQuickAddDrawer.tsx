@@ -191,8 +191,7 @@ export function MobileQuickAddDrawer({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="🚀 Express Quick-Add (Mobile)"
-      description="Lançamento ultracompacto com teclado numérico nativo."
+      title="Novo Lançamento Express"
     >
       <div className="space-y-3.5 pt-0.5">
         {/* Switch to Full Form Header Button */}
@@ -214,11 +213,10 @@ export function MobileQuickAddDrawer({
           <button
             type="button"
             onClick={() => setType('EXPENSE')}
-            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-              type === 'EXPENSE'
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${type === 'EXPENSE'
+              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+              : 'text-slate-400 hover:text-white'
+              }`}
           >
             <ArrowDownRight className="w-3.5 h-3.5 text-rose-200" /> Despesa
           </button>
@@ -226,11 +224,10 @@ export function MobileQuickAddDrawer({
           <button
             type="button"
             onClick={() => setType('INCOME')}
-            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-              type === 'INCOME'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${type === 'INCOME'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+              : 'text-slate-400 hover:text-white'
+              }`}
           >
             <ArrowUpRight className="w-3.5 h-3.5 text-emerald-200" /> Receita
           </button>
@@ -238,11 +235,10 @@ export function MobileQuickAddDrawer({
           <button
             type="button"
             onClick={() => setType('CREDIT_CARD_PURCHASE')}
-            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-              type === 'CREDIT_CARD_PURCHASE'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${type === 'CREDIT_CARD_PURCHASE'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+              : 'text-slate-400 hover:text-white'
+              }`}
           >
             <CreditCard className="w-3.5 h-3.5 text-blue-200" /> Cartão
           </button>
@@ -259,13 +255,12 @@ export function MobileQuickAddDrawer({
               placeholder="0.00"
               value={rawAmount}
               onChange={(e) => setRawAmount(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 bg-slate-900 border rounded-2xl text-2xl font-mono font-black text-white focus:outline-none transition-all ${
-                type === 'INCOME'
-                  ? 'border-emerald-500/40 text-emerald-400 focus:border-emerald-500'
-                  : type === 'EXPENSE'
+              className={`w-full pl-10 pr-4 py-3 bg-slate-900 border rounded-2xl text-2xl font-mono font-black text-white focus:outline-none transition-all ${type === 'INCOME'
+                ? 'border-emerald-500/40 text-emerald-400 focus:border-emerald-500'
+                : type === 'EXPENSE'
                   ? 'border-rose-500/40 text-rose-400 focus:border-rose-500'
                   : 'border-blue-500/40 text-blue-400 focus:border-blue-500'
-              }`}
+                }`}
             />
           </div>
 
@@ -323,11 +318,10 @@ export function MobileQuickAddDrawer({
                   onClick={() => {
                     setSelectedCategory(c.id);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-400 scale-[1.02]'
-                      : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${isSelected
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-400 scale-[1.02]'
+                    : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                    }`}
                 >
                   <span className={isSelected ? 'text-white' : 'text-blue-400'}>
                     {IconComponent}
@@ -355,43 +349,41 @@ export function MobileQuickAddDrawer({
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             {type === 'CREDIT_CARD_PURCHASE'
               ? (creditCards.length > 0 ? creditCards : DEFAULT_CARDS).map((card) => {
-                  const isSelected = selectedCard === card.id;
+                const isSelected = selectedCard === card.id;
 
-                  return (
-                    <button
-                      key={card.id}
-                      type="button"
-                      onClick={() => setSelectedCard(card.id)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                        isSelected
-                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400 scale-[1.02]'
-                          : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => setSelectedCard(card.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${isSelected
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400 scale-[1.02]'
+                      : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
                       }`}
-                    >
-                      <CreditCard className="w-3.5 h-3.5 text-purple-300" />
-                      <span>{card.name}</span>
-                    </button>
-                  );
-                })
+                  >
+                    <CreditCard className="w-3.5 h-3.5 text-purple-300" />
+                    <span>{card.name}</span>
+                  </button>
+                );
+              })
               : (accounts.length > 0 ? accounts : DEFAULT_ACCOUNTS).map((acc) => {
-                  const isSelected = selectedAccount === acc.id;
+                const isSelected = selectedAccount === acc.id;
 
-                  return (
-                    <button
-                      key={acc.id}
-                      type="button"
-                      onClick={() => setSelectedAccount(acc.id)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                        isSelected
-                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 border border-emerald-400 scale-[1.02]'
-                          : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                return (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => setSelectedAccount(acc.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${isSelected
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 border border-emerald-400 scale-[1.02]'
+                      : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
                       }`}
-                    >
-                      <Wallet className="w-3.5 h-3.5 text-emerald-300" />
-                      <span>{acc.name}</span>
-                    </button>
-                  );
-                })}
+                  >
+                    <Wallet className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>{acc.name}</span>
+                  </button>
+                );
+              })}
           </div>
         </div>
 
