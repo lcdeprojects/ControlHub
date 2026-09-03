@@ -8,7 +8,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { ShieldCheck } from 'lucide-react';
 
-const PUBLIC_PATHS = ['/login', '/register', '/reset-password'];
+const PUBLIC_PATHS = ['/login', '/register', '/reset-password', '/landing'];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,8 +22,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading) {
       if (!user && !isPublicPage) {
-        router.push('/login');
-      } else if (user && pathname === '/login') {
+        router.push('/landing');
+      } else if (user && (pathname === '/login' || pathname === '/landing')) {
         router.push('/');
       } else if (user && pathname === '/admin' && user.role !== 'ADMIN') {
         router.push('/');
@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isPublicPage) {
     return (
-      <div className="w-full min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
+      <div className="w-full min-h-screen bg-zinc-950 text-zinc-100">
         {children}
       </div>
     );
