@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   CreditCard,
   Check,
-  Delete,
   Tag,
   Wallet,
   ShoppingCart,
@@ -21,6 +20,7 @@ import {
   TrendingUp,
   SlidersHorizontal,
   FileText,
+  DollarSign,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -31,7 +31,6 @@ interface MobileQuickAddDrawerProps {
   onSwitchToFullForm?: () => void;
 }
 
-// Fallback das 4 categorias principais solicitadas pelo usuário
 const DEFAULT_QUICK_CATEGORIES = [
   { id: 'cat_mercado', name: 'Mercado', icon: 'shopping-cart', type: 'EXPENSE' },
   { id: 'cat_restaurantes', name: 'Restaurantes', icon: 'utensils', type: 'EXPENSE' },
@@ -72,7 +71,7 @@ export function MobileQuickAddDrawer({
   onSwitchToFullForm,
 }: MobileQuickAddDrawerProps) {
   const [type, setType] = useState<'EXPENSE' | 'INCOME' | 'CREDIT_CARD_PURCHASE'>('EXPENSE');
-  const [amountStr, setAmountStr] = useState('0');
+  const [rawAmount, setRawAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('cat_mercado');
   const [selectedAccount, setSelectedAccount] = useState('');
@@ -91,13 +90,11 @@ export function MobileQuickAddDrawer({
       ])
         .then(([catData, accData, cardData]) => {
           if (catData?.success && catData.categories?.length > 0) {
-            // Filtrar categorias marcadas para o QuickModal (showInQuickAdd) ou usar as 4 principais por padrão
             const quickCats = catData.categories.filter((c: any) => c.showInQuickAdd);
             if (quickCats.length > 0) {
               setCategories(quickCats);
               setSelectedCategory(quickCats[0].id);
             } else {
-              // Fallback para as 4 categorias solicitadas
               const main4 = catData.categories.filter((c: any) =>
                 ['mercado', 'restaurante', 'combustível', 'lazer'].some((key) =>
                   c.name.toLowerCase().includes(key)
@@ -125,25 +122,12 @@ export function MobileQuickAddDrawer({
     }
   }, [isOpen]);
 
-  const handleNumpadPress = (val: string) => {
-    if (val === 'DEL') {
-      setAmountStr((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
-      return;
-    }
+  const numericAmount = parseFloat(rawAmount.replace(',', '.')) || 0;
 
-    if (val === 'CLR') {
-      setAmountStr('0');
-      return;
-    }
-
-    setAmountStr((prev) => {
-      if (prev === '0') return val;
-      if (prev.length >= 7) return prev;
-      return prev + val;
-    });
+  const handleAddAmountPreset = (addValue: number) => {
+    const current = numericAmount;
+    setRawAmount((current + addValue).toFixed(2));
   };
-
-  const numericAmount = parseFloat(amountStr || '0') / 100;
 
   const handleSubmit = async () => {
     if (numericAmount <= 0) {
@@ -181,7 +165,7 @@ export function MobileQuickAddDrawer({
 
       const data = await res.json();
       if (data.success) {
-        setAmountStr('0');
+        setRawAmount('');
         setDescription('');
         onSuccess();
         onClose();
@@ -206,16 +190,16 @@ export function MobileQuickAddDrawer({
       isOpen={isOpen}
       onClose={onClose}
       title="🚀 Express Quick-Add (Mobile)"
-      description="Lançamento ultra-rápido com pad numérico e chips em 1 toque."
+      description="Lançamento ultracompacto com teclado numérico nativo."
     >
-      <div className="space-y-4 pt-1">
-        {/* Switch to Full Form Button */}
+      <div className="space-y-3.5 pt-0.5">
+        {/* Switch to Full Form Header Button */}
         {onSwitchToFullForm && (
           <div className="flex items-center justify-end">
             <button
               type="button"
               onClick={onSwitchToFullForm}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5 text-blue-400" />
               <span>Formulário Completo 📝</span>
@@ -224,59 +208,78 @@ export function MobileQuickAddDrawer({
         )}
 
         {/* Type Selector Tabs */}
-        <div className="grid grid-cols-3 gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+        <div className="grid grid-cols-3 gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
           <button
             type="button"
             onClick={() => setType('EXPENSE')}
-            className={`py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
               type === 'EXPENSE'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30 scale-[1.02]'
+                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <ArrowDownRight className="w-4 h-4 text-rose-200" /> Despesa
+            <ArrowDownRight className="w-3.5 h-3.5 text-rose-200" /> Despesa
           </button>
 
           <button
             type="button"
             onClick={() => setType('INCOME')}
-            className={`py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
               type === 'INCOME'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 scale-[1.02]'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <ArrowUpRight className="w-4 h-4 text-emerald-200" /> Receita
+            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-200" /> Receita
           </button>
 
           <button
             type="button"
             onClick={() => setType('CREDIT_CARD_PURCHASE')}
-            className={`py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
               type === 'CREDIT_CARD_PURCHASE'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-[1.02]'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <CreditCard className="w-4 h-4 text-blue-200" /> Cartão
+            <CreditCard className="w-3.5 h-3.5 text-blue-200" /> Cartão
           </button>
         </div>
 
-        {/* Big Amount Display */}
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 text-center shadow-inner">
-          <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">
-            Valor do Lançamento
-          </span>
-          <div
-            className={`text-3xl sm:text-4xl font-mono font-black tracking-tight ${
-              type === 'INCOME'
-                ? 'text-emerald-400'
-                : type === 'EXPENSE'
-                ? 'text-rose-400'
-                : 'text-blue-400'
-            }`}
-          >
-            {formatCurrency(numericAmount)}
+        {/* Numeric Input Field (Abre o teclado numérico do próprio celular!) */}
+        <div className="space-y-1.5">
+          <div className="relative">
+            <span className="absolute left-3.5 top-3.5 text-sm font-black text-slate-400">R$</span>
+            <input
+              type="number"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={rawAmount}
+              onChange={(e) => setRawAmount(e.target.value)}
+              className={`w-full pl-10 pr-4 py-3 bg-slate-900 border rounded-2xl text-2xl font-mono font-black text-white focus:outline-none transition-all ${
+                type === 'INCOME'
+                  ? 'border-emerald-500/40 text-emerald-400 focus:border-emerald-500'
+                  : type === 'EXPENSE'
+                  ? 'border-rose-500/40 text-rose-400 focus:border-rose-500'
+                  : 'border-blue-500/40 text-blue-400 focus:border-blue-500'
+              }`}
+            />
+          </div>
+
+          {/* Quick Preset Add Buttons (+10, +50, +100, +500) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] text-slate-500 font-bold uppercase shrink-0">Atalhos:</span>
+            {[10, 50, 100, 200, 500].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => handleAddAmountPreset(val)}
+                className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-bold text-slate-300 hover:text-white shrink-0 cursor-pointer transition-colors"
+              >
+                +{val}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -284,29 +287,29 @@ export function MobileQuickAddDrawer({
         <div>
           <input
             type="text"
-            placeholder="Descrição (opcional - usa a categoria se vazio)"
+            placeholder="Descrição (opcional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+            className="w-full px-3.5 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
           />
         </div>
 
         {/* Clickable Fast Chips - Categories */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-blue-400" /> Categorias Rápidas:
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-blue-400" /> Categoria:
             </label>
             <a
               href="/settings"
               onClick={onClose}
               className="text-[10px] text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1"
             >
-              <SlidersHorizontal className="w-3 h-3" /> Customizar
+              <SlidersHorizontal className="w-3 h-3" /> Personalizar
             </a>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             {displayCategories.map((c) => {
               const isSelected = selectedCategory === c.id;
               const IconComponent = getCategoryIcon(c.name, c.icon);
@@ -321,16 +324,16 @@ export function MobileQuickAddDrawer({
                       setDescription(c.name);
                     }
                   }}
-                  className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isSelected
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400 scale-[1.02]'
-                      : 'bg-slate-900/90 hover:bg-slate-800/90 text-slate-300 border border-slate-800'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-400 scale-[1.02]'
+                      : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
                   }`}
                 >
                   <span className={isSelected ? 'text-white' : 'text-blue-400'}>
                     {IconComponent}
                   </span>
-                  <span className="truncate">{c.name}</span>
+                  <span>{c.name}</span>
                 </button>
               );
             })}
@@ -338,19 +341,19 @@ export function MobileQuickAddDrawer({
         </div>
 
         {/* Clickable Fast Chips - Accounts / Credit Cards */}
-        <div className="space-y-2">
-          <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             {type === 'CREDIT_CARD_PURCHASE' ? (
               <>
-                <CreditCard className="w-3.5 h-3.5 text-purple-400" /> Cartão de Crédito:
+                <CreditCard className="w-3.5 h-3.5 text-purple-400" /> Cartão:
               </>
             ) : (
               <>
-                <Wallet className="w-3.5 h-3.5 text-emerald-400" /> Conta Bancária:
+                <Wallet className="w-3.5 h-3.5 text-emerald-400" /> Conta:
               </>
             )}
           </label>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             {type === 'CREDIT_CARD_PURCHASE'
               ? (creditCards.length > 0 ? creditCards : DEFAULT_CARDS).map((card) => {
                   const isSelected = selectedCard === card.id;
@@ -362,7 +365,7 @@ export function MobileQuickAddDrawer({
                       onClick={() => setSelectedCard(card.id)}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                         isSelected
-                          ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border border-purple-400 scale-105'
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400 scale-[1.02]'
                           : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
                       }`}
                     >
@@ -381,7 +384,7 @@ export function MobileQuickAddDrawer({
                       onClick={() => setSelectedAccount(acc.id)}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                         isSelected
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-400 scale-105'
+                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 border border-emerald-400 scale-[1.02]'
                           : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
                       }`}
                     >
@@ -393,35 +396,17 @@ export function MobileQuickAddDrawer({
           </div>
         </div>
 
-        {/* Giant Custom Numpad Grid */}
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'DEL'].map((btn) => (
-            <button
-              key={btn}
-              type="button"
-              onClick={() => handleNumpadPress(btn)}
-              className={`py-3.5 rounded-2xl font-mono text-lg font-black transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
-                btn === 'DEL'
-                  ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                  : 'bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-800/80 hover:border-slate-700 shadow-sm'
-              }`}
-            >
-              {btn === 'DEL' ? <Delete className="w-5 h-5" /> : btn}
-            </button>
-          ))}
-        </div>
-
-        {/* One-Tap Save Button */}
-        <div className="pt-2">
+        {/* Compact Confirm Button */}
+        <div className="pt-1">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={submitting || numericAmount <= 0}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-sm shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-xs shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
           >
-            <Check className="w-5 h-5" />
+            <Check className="w-4 h-4" />
             <span>
-              {submitting ? 'Lançando...' : `Confirmar ${formatCurrency(numericAmount)}`}
+              {submitting ? 'Lançando...' : `Confirmar Lançamento (${formatCurrency(numericAmount)})`}
             </span>
           </button>
         </div>
