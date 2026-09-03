@@ -465,6 +465,20 @@ export async function ensureDatabaseSchema() {
         );
       `);
 
+      // 17. User Invites (Convites por Link)
+      await db.run(sql`
+        CREATE TABLE IF NOT EXISTS user_invites (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          name TEXT NOT NULL,
+          role TEXT DEFAULT 'USER',
+          token TEXT UNIQUE NOT NULL,
+          used INTEGER DEFAULT 0,
+          created_by TEXT REFERENCES users(id) ON DELETE CASCADE,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // --- Reparos Estruturais para Bancos Legados ---
       await repairCreditCardsTable();
       await repairInvoicesTable();

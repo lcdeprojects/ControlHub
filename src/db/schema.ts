@@ -283,3 +283,15 @@ export const authenticators = sqliteTable('authenticators', {
   deviceName: text('device_name').default('Dispositivo Biométrico'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
+
+// 17. User Invites (Convites por Link com Primeiro Acesso)
+export const userInvites = sqliteTable('user_invites', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull(),
+  name: text('name').notNull(),
+  role: text('role').notNull().$type<'ADMIN' | 'USER'>().default('USER'),
+  token: text('token').notNull().unique(),
+  used: integer('used', { mode: 'boolean' }).default(false),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});

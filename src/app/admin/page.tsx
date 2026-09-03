@@ -17,6 +17,9 @@ import {
   RefreshCw,
   AlertTriangle,
   Trash2,
+  Link as LinkIcon,
+  Copy,
+  Sparkles,
 } from 'lucide-react';
 
 const AVATAR_COLORS = [
@@ -39,9 +42,20 @@ interface UserItem {
   createdAt?: string;
 }
 
+interface InviteItem {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  token: string;
+  used: boolean;
+  createdAt: string;
+}
+
 export default function AdminBackofficePage() {
   const { user } = useAuth();
   const [usersList, setUsersList] = useState<UserItem[]>([]);
+  const [invitesList, setInvitesList] = useState<InviteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -55,6 +69,15 @@ export default function AdminBackofficePage() {
   const [newColor, setNewColor] = useState(AVATAR_COLORS[0]);
   const [submittingCreate, setSubmittingCreate] = useState(false);
 
+  // Invite Link Modal
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'USER' | 'ADMIN'>('USER');
+  const [generatedUrl, setGeneratedUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [submittingInvite, setSubmittingInvite] = useState(false);
+
   // Reset Password Modal
   const [resetTargetUser, setResetTargetUser] = useState<UserItem | null>(null);
   const [resetPinValue, setResetPinValue] = useState('');
@@ -63,12 +86,17 @@ export default function AdminBackofficePage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/users');
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setUsersList(data.users || []);
-      } else {
-        setError(data.error || 'Erro ao carregar lista de usuários');
+      const [uRes, iRes] = await Promise.all([
+        fetch('/api/admin/users'),
+        fetch('/api/admin/invites'),
+      ]);
+      const [uData, iData] = await Promise.all([uRes.json(), iRes.json()]);
+
+      if (uRes.ok && uData.success) {
+        setUsersList(uData.users || []);
+      }
+      if (iRes.ok && iData.success) {
+        setInvitesList(iData.invites || []);
       }
     } catch (err: any) {
       setError('Falha de conexão com o servidor');
@@ -96,6 +124,55 @@ export default function AdminBackofficePage() {
       </div>
     );
   }
+
+  const handleGenerateInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingInvite(true);
+    setError('');
+    setSuccessMsg('');
+    setGeneratedUrl('');
+
+    try {
+      const res = await fetch('/api/admin/invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: inviteName,
+          email: inviteEmail,
+          role: inviteRole,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Erro ao gerar link de convite');
+      } else {
+        setGeneratedUrl(data.invite.inviteUrl);
+        setSuccessMsg(`Link de convite criado para ${inviteName}!`);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro de conexão');
+    } finally {
+      setSubmittingInvite(false);
+    }
+  };
+
+  const handleCopyInviteUrl = (urlStr: string) => {
+    navigator.clipboard.writeText(urlStr);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handleRevokeInvite = async (id: string) => {
+    if (!confirm('Deseja revogar este link de convite?')) return;
+    try {
+      const res = await fetch(`/api/admin/invites?id=${id}`, { method: 'DELETE' });
+      if (res.ok) fetchUsers();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,16 +308,33 @@ export default function AdminBackofficePage() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setError('');
-            setIsCreateOpen(true);
-          }}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Criar Novo Usuário</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Main Action: Generate Invite Link */}
+          <button
+            onClick={() => {
+              setError('');
+              setGeneratedUrl('');
+              setInviteName('');
+              setInviteEmail('');
+              setIsInviteOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-600/25 transition-all cursor-pointer"
+          >
+            <LinkIcon className="w-4 h-4" />
+            <span>🔗 Gerar Link de Convite</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setError('');
+              setIsCreateOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Manual</span>
+          </button>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -272,6 +366,20 @@ export default function AdminBackofficePage() {
         <Card className="p-5 border-zinc-800 bg-zinc-900/60">
           <div className="flex items-center justify-between">
             <div>
+              <p className="text-xs text-zinc-400 font-medium">Convites Pendentes</p>
+              <p className="text-2xl font-bold text-purple-400 mt-1">
+                {invitesList.filter((i) => !i.used).length}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+              <LinkIcon className="w-5 h-5" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5 border-zinc-800 bg-zinc-900/60">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-xs text-zinc-400 font-medium">Administradores</p>
               <p className="text-2xl font-bold text-emerald-400 mt-1">{adminCount}</p>
             </div>
@@ -280,24 +388,75 @@ export default function AdminBackofficePage() {
             </div>
           </div>
         </Card>
+      </div>
 
-        <Card className="p-5 border-zinc-800 bg-zinc-900/60">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-zinc-400 font-medium">Usuários Comuns</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1">{userCount}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
-              <UserIcon className="w-5 h-5" />
-            </div>
+      {/* Invites Table */}
+      {invitesList.length > 0 && (
+        <Card className="border-zinc-800 bg-zinc-900/60 overflow-hidden">
+          <div className="p-4 border-b border-zinc-800">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              Links de Convite Enviados ({invitesList.length})
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-950/60 text-zinc-400 font-semibold uppercase tracking-wider border-b border-zinc-800">
+                <tr>
+                  <th className="px-4 py-3">Convidado</th>
+                  <th className="px-4 py-3">E-mail</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/60">
+                {invitesList.map((inv) => {
+                  const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
+                  const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+                  const fullUrl = `${protocol}//${host}/register?token=${inv.token}`;
+
+                  return (
+                    <tr key={inv.id} className="hover:bg-zinc-800/30">
+                      <td className="px-4 py-3 font-semibold text-white">{inv.name}</td>
+                      <td className="px-4 py-3 text-zinc-400 font-mono">{inv.email}</td>
+                      <td className="px-4 py-3">
+                        {inv.used ? (
+                          <Badge variant="success">Cadastrado</Badge>
+                        ) : (
+                          <Badge variant="blue">Pendente</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+                        {!inv.used && (
+                          <button
+                            onClick={() => handleCopyInviteUrl(fullUrl)}
+                            className="px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-bold border border-purple-500/40 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Copiar Link</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRevokeInvite(inv.id)}
+                          className="p-1 rounded-lg text-zinc-500 hover:text-rose-400 cursor-pointer"
+                          title="Revogar convite"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </Card>
-      </div>
+      )}
 
       {/* Users Table */}
       <Card className="border-zinc-800 bg-zinc-900/60 overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-zinc-800 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-white">Usuários Cadastrados</h2>
+          <h2 className="text-base font-semibold text-white">Usuários Ativos</h2>
           <button
             onClick={fetchUsers}
             className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer"
@@ -394,8 +553,96 @@ export default function AdminBackofficePage() {
         )}
       </Card>
 
-      {/* Create User Modal */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Criar Novo Usuário">
+      {/* Invite Link Generator Modal */}
+      {isInviteOpen && (
+        <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="🔗 Gerar Link de Convite para Novo Usuário">
+          <form onSubmit={handleGenerateInvite} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Nome do Convidado *</label>
+              <input
+                type="text"
+                required
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+                placeholder="Ex: Carlos Silva, Maria Santos..."
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">E-mail do Convidado *</label>
+              <input
+                type="email"
+                required
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="carlos@exemplo.com"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Função no Sistema</label>
+              <select
+                value={inviteRole}
+                onChange={(e: any) => setInviteRole(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+              >
+                <option value="USER">Usuário Padrão</option>
+                <option value="ADMIN">Administrador (Acesso ao Backoffice)</option>
+              </select>
+            </div>
+
+            {generatedUrl && (
+              <div className="p-3.5 bg-purple-950/40 border border-purple-500/40 rounded-xl space-y-2">
+                <span className="text-xs font-bold text-purple-300 block">✅ Link de Convite Gerado!</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={generatedUrl}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleCopyInviteUrl(generatedUrl)}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold shrink-0 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copied ? 'Copiado!' : 'Copiar'}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Envie este link para a pessoa. Ao abrir, ela poderá criar a própria senha e entrar no sistema!
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setIsInviteOpen(false)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium cursor-pointer"
+              >
+                Fechar
+              </button>
+              {!generatedUrl && (
+                <button
+                  type="submit"
+                  disabled={submittingInvite}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-bold text-sm disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  <span>{submittingInvite ? 'Gerando...' : 'Gerar Link de Convite'}</span>
+                </button>
+              )}
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Create User Modal (Manual) */}
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Criar Novo Usuário (Manual)">
         <form onSubmit={handleCreateUser} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1.5">Nome Completo</label>
