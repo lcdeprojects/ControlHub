@@ -79,8 +79,15 @@ export function GettingStartedCard() {
     }
   };
 
-  // Se o usuário dispensou, se o carregamento falhou ou se atingiu 100% de conclusão, não renderizar
-  if (dismissed || loading || !status || status.isFullyCompleted || status.progressPercentage === 100) {
+  // Se o carregamento não finalizou ou não há status, não renderizar
+  if (loading || !status) {
+    return null;
+  }
+
+  // Se o usuário dispensou ou se atingiu 100% de conclusão, não renderizar (a menos que passe ?showOnboarding=true na URL para teste)
+  const isForceShow = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('showOnboarding') === 'true';
+
+  if (!isForceShow && (dismissed || status.isFullyCompleted || status.progressPercentage === 100)) {
     return null;
   }
 
@@ -140,21 +147,21 @@ export function GettingStartedCard() {
       <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header do Card */}
-      <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60">
-        <div className="flex items-start sm:items-center gap-3.5">
+      <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-blue-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
             <Sparkles className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                Guia de Início Rápido
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 whitespace-nowrap">
+                Início Rápido
               </span>
-              <span className="text-xs text-slate-400 font-semibold">
-                {status.completedCount} de {status.totalSteps} concluídos
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                {status.completedCount} de {status.totalSteps} tarefas
               </span>
             </div>
-            <h3 className="text-lg font-black text-white mt-0.5 flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-black text-white mt-0.5">
               Primeiros Passos no ControlHub
             </h3>
           </div>
