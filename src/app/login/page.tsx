@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { LogIn, Lock, Mail, UserCheck } from 'lucide-react';
+import { LogIn, Lock, Mail, UserCheck, KeyRound, HelpCircle } from 'lucide-react';
 import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+import { Modal } from '@/components/ui/Modal';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -78,7 +80,16 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Senha / PIN de Acesso</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-zinc-300">Senha / PIN de Acesso</label>
+              <button
+                type="button"
+                onClick={() => setIsForgotOpen(true)}
+                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
               <input
@@ -108,6 +119,39 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+
+      {/* Forgot Password Instructions Modal */}
+      {isForgotOpen && (
+        <Modal
+          isOpen={isForgotOpen}
+          onClose={() => setIsForgotOpen(false)}
+          title="🔑 Esqueci minha Senha"
+        >
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+              <KeyRound className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-zinc-300 leading-relaxed space-y-2">
+                <p>
+                  Por motivos de segurança financeira, a redefinição de senha é feita através de um <strong className="text-white">Link de Redefinição Pessoal e Temporário</strong>.
+                </p>
+                <p>
+                  Solicite ao administrador da sua conta (`lucasconto`) que gere o seu link no painel Backoffice. Ele enviará a URL de redefinição para você no WhatsApp.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setIsForgotOpen(false)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold cursor-pointer"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -78,6 +78,32 @@ export default function AdminBackofficePage() {
   const [copied, setCopied] = useState(false);
   const [submittingInvite, setSubmittingInvite] = useState(false);
 
+  // Reset Link Modal
+  const [resetModalData, setResetModalData] = useState<{ userName: string; resetUrl: string } | null>(null);
+
+  const handleGenerateResetLink = async (targetUser: UserItem) => {
+    setError('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch('/api/admin/password-reset-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetUser.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setResetModalData({
+          userName: targetUser.name,
+          resetUrl: data.reset.resetUrl,
+        });
+      } else {
+        setError(data.error || 'Erro ao gerar link de redefinição.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro de conexão.');
+    }
+  };
+
   // Reset Password Modal
   const [resetTargetUser, setResetTargetUser] = useState<UserItem | null>(null);
   const [resetPinValue, setResetPinValue] = useState('');
@@ -524,14 +550,12 @@ export default function AdminBackofficePage() {
                       </button>
 
                       <button
-                        onClick={() => {
-                          setResetTargetUser(u);
-                          setResetPinValue('');
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-zinc-700 transition-colors cursor-pointer"
+                        onClick={() => handleGenerateResetLink(u)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/30 transition-colors cursor-pointer"
+                        title="Gerar link temporário para o usuário redefinir a própria senha"
                       >
-                        <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Resetar Senha</span>
+                        <LinkIcon className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Link de Redefinição</span>
                       </button>
 
                       {u.id !== user?.id && (
@@ -769,6 +793,50 @@ export default function AdminBackofficePage() {
           </div>
         </form>
       </Modal>
+      {/* Reset Link Modal */}
+      {resetModalData && (
+        <Modal
+          isOpen={Boolean(resetModalData)}
+          onClose={() => setResetModalData(null)}
+          title={`🔑 Link de Redefinição de Senha (${resetModalData.userName})`}
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-zinc-400">
+              Envie o link abaixo para <strong className="text-white">{resetModalData.userName}</strong>. Ao clicar no link, o usuário poderá cadastrar a própria nova senha/PIN.
+            </p>
+
+            <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-2">
+              <span className="text-xs font-bold text-amber-300 block">Link de Redefinição Gerado:</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={resetModalData.resetUrl}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCopyInviteUrl(resetModalData.resetUrl)}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shrink-0 flex items-center gap-1 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{copied ? 'Copiado!' : 'Copiar'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setResetModalData(null)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

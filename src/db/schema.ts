@@ -295,3 +295,13 @@ export const userInvites = sqliteTable('user_invites', {
   createdBy: text('created_by').references(() => users.id, { onDelete: 'cascade' }),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
+
+// 18. Password Resets (Tokens de Redefinição de Senha via Link)
+export const passwordResets = sqliteTable('password_resets', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  used: integer('used', { mode: 'boolean' }).default(false),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});

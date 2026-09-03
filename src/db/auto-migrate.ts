@@ -479,6 +479,18 @@ export async function ensureDatabaseSchema() {
         );
       `);
 
+      // 18. Password Resets (Tokens de Redefinição de Senha)
+      await db.run(sql`
+        CREATE TABLE IF NOT EXISTS password_resets (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token TEXT UNIQUE NOT NULL,
+          used INTEGER DEFAULT 0,
+          created_by TEXT REFERENCES users(id) ON DELETE CASCADE,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // --- Reparos Estruturais para Bancos Legados ---
       await repairCreditCardsTable();
       await repairInvoicesTable();
