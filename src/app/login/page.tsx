@@ -135,7 +135,7 @@ export default function LoginPage() {
                   Por motivos de segurança financeira, a redefinição de senha é feita através de um <strong className="text-white">Link de Redefinição Pessoal e Temporário</strong>.
                 </p>
                 <p>
-                  Solicite ao administrador da sua conta (`lucasconto`) que gere o seu link no painel Backoffice. Ele enviará a URL de redefinição para você no WhatsApp.
+                  Solicite ao administrador da sua conta que gere o seu link no painel Backoffice. Ele enviará a URL de redefinição para você no WhatsApp.
                 </p>
               </div>
             </div>
