@@ -15,6 +15,8 @@ export async function GET(req: Request) {
         email: user.email,
         avatarColor: user.avatarColor,
         role: user.role || 'USER',
+        subscriptionStatus: user.subscriptionStatus || 'TRIAL',
+        trialEndsAt: user.trialEndsAt || null,
       },
     });
   } catch (error: any) {

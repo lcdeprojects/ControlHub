@@ -5,12 +5,12 @@ import fs from 'fs';
 import path from 'path';
 import { ensureDatabaseSchema } from './auto-migrate';
 
-const rawUrl = process.env.DATABASE_URL || 'file:controlhub.db';
+const rawUrl = process.env.DATABASE_URL || 'file:nexumhub.db';
 const authToken = process.env.DATABASE_AUTH_TOKEN || undefined;
 
 const isTursoCloud = rawUrl.startsWith('libsql:') || rawUrl.includes('.turso.io');
 
-// Se for arquivo local (ex: file:controlhub.db), garante que a pasta pai exista
+// Se for arquivo local (ex: file:nexumhub.db), garante que a pasta pai exista
 if (rawUrl.startsWith('file:')) {
   try {
     const filePath = rawUrl.replace('file:', '');
@@ -33,7 +33,7 @@ export const db = drizzle(client, { schema });
 export function getDbConnectionInfo() {
   return {
     mode: isTursoCloud ? ('TURSO_CLOUD' as const) : ('SQLITE_LOCAL' as const),
-    url: isTursoCloud ? rawUrl.split('?')[0] : 'file:controlhub.db',
+    url: isTursoCloud ? rawUrl.split('?')[0] : 'file:nexumhub.db',
     hasAuthToken: Boolean(authToken),
   };
 }

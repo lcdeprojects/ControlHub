@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
-import { Lock, Mail, UserCheck, ShieldCheck, Check, Sparkles, AlertTriangle } from 'lucide-react';
+import { NexumHubLogo } from '@/components/ui/NexumHubLogo';
+import { Lock, Mail, UserCheck, Check, Sparkles, AlertTriangle } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import Link from 'next/link';
 
 const AVATAR_COLORS = [
   '#6366f1', // Indigo
@@ -20,12 +22,13 @@ function RegisterContent() {
   const router = useRouter();
   const token = searchParams.get('token');
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(token));
   const [inviteData, setInviteData] = useState<any>(null);
   const [error, setError] = useState('');
 
   // Form State
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [color, setColor] = useState(AVATAR_COLORS[0]);
@@ -33,7 +36,6 @@ function RegisterContent() {
 
   useEffect(() => {
     if (!token) {
-      setError('Token de convite não informado. Solicite um link ao administrador.');
       setLoading(false);
       return;
     }
@@ -44,6 +46,7 @@ function RegisterContent() {
         if (data.success && data.invite) {
           setInviteData(data.invite);
           setName(data.invite.name || '');
+          setEmail(data.invite.email || '');
         } else {
           setError(data.error || 'Convite inválido ou expirado.');
         }
@@ -55,7 +58,7 @@ function RegisterContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pin) {
-      setError('Digite a sua nova senha / PIN.');
+      setError('Digite a sua senha ou PIN de acesso.');
       return;
     }
     if (pin !== confirmPin) {
@@ -67,16 +70,22 @@ function RegisterContent() {
     setError('');
 
     try {
-      const res = await fetch('/api/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          name,
-          pin,
-          avatarColor: color,
-        }),
-      });
+      let res;
+      if (token) {
+        // Fluxo por convite do admin
+        res = await fetch('/api/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, name, pin, avatarColor: color }),
+        });
+      } else {
+        // Fluxo público direto com 7 dias de degustação
+        res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, pin, avatarColor: color }),
+        });
+      }
 
       const data = await res.json();
       if (res.ok && data.success) {
@@ -94,27 +103,7 @@ function RegisterContent() {
   if (loading) {
     return (
       <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 text-zinc-400 text-sm">
-        Validando link de convite...
-      </div>
-    );
-  }
-
-  if (error && !inviteData) {
-    return (
-      <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <h2 className="text-lg font-bold text-white">Convite Inválido ou Expirado</h2>
-          <p className="text-xs text-zinc-400">{error}</p>
-          <a
-            href="/login"
-            className="inline-block px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition-all"
-          >
-            Ir para Login
-          </a>
-        </div>
+        Validando informações de cadastro...
       </div>
     );
   }
@@ -123,20 +112,35 @@ function RegisterContent() {
     <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
       {/* Brand Header */}
       <div className="flex flex-col items-center text-center mb-6">
-        <ControlHubLogo size="xl" className="mb-2" />
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mt-2">
+        <NexumHubLogo size="xl" className="mb-2" />
+        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mt-2">
           <Sparkles className="w-3.5 h-3.5" />
-          Primeiro Acesso ao Sistema
+          <span>7 Dias de Degustação Grátis • NexumHub Pro</span>
         </span>
       </div>
 
       {/* Register Card */}
-      <div className="w-full max-w-md bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+      <div className="w-full max-w-md bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-xl space-y-5">
         <div>
-          <h2 className="text-lg font-bold text-white">Bem-vindo(a), {inviteData?.name}! 👋</h2>
+          <h2 className="text-lg font-bold text-white">
+            {inviteData ? `Bem-vindo(a), ${inviteData.name}! 👋` : 'Crie sua conta no NexumHub'}
+          </h2>
           <p className="text-xs text-zinc-400 mt-1">
-            Crie a sua senha/PIN pessoal para acessar o ControlHub.
+            {inviteData
+              ? 'Complete o formulário abaixo para ativar seu acesso.'
+              : 'Acesso instantâneo a todas as ferramentas Pro por 7 dias.'}
           </p>
+        </div>
+
+        {/* 1-Click Google Sign Up */}
+        <div className="space-y-3 pt-1">
+          <GoogleSignInButton label="Cadastrar com o Google" />
+          <div className="relative flex items-center justify-center">
+            <div className="w-full border-t border-zinc-800" />
+            <span className="bg-zinc-900 px-3 text-[11px] text-zinc-500 uppercase tracking-wider font-semibold absolute">
+              ou crie com e-mail
+            </span>
+          </div>
         </div>
 
         {error && (
@@ -147,27 +151,33 @@ function RegisterContent() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Seu E-mail (Convidado)</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
-              <input
-                type="text"
-                disabled
-                value={inviteData?.email || ''}
-                className="w-full bg-zinc-950/40 border border-zinc-800/60 rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-400 font-mono cursor-not-allowed"
-              />
-            </div>
-          </div>
-
-          <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1.5">Seu Nome Completo</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              placeholder="Digite seu nome completo"
+              className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Seu E-mail</label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+              <input
+                type="email"
+                required
+                disabled={Boolean(inviteData)}
+                value={inviteData ? inviteData.email : email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seuemail@exemplo.com"
+                className={`w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors ${
+                  inviteData ? 'cursor-not-allowed opacity-75' : ''
+                }`}
+              />
+            </div>
           </div>
 
           <div>
@@ -180,7 +190,7 @@ function RegisterContent() {
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="Digite sua senha ou PIN"
-                className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
           </div>
@@ -195,7 +205,7 @@ function RegisterContent() {
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value)}
                 placeholder="Confirme a senha digitada"
-                className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
           </div>
@@ -226,12 +236,21 @@ function RegisterContent() {
               <span>Criando Conta...</span>
             ) : (
               <>
-                <UserCheck className="w-4 h-4" />
-                <span>Finalizar Cadastro e Entrar</span>
+                <UserCheck className="w-4 h-4 text-zinc-950" />
+                <span>Começar 7 Dias Grátis</span>
               </>
             )}
           </button>
         </form>
+
+        <div className="pt-2 text-center border-t border-zinc-800/80">
+          <p className="text-xs text-zinc-400">
+            Já tem uma conta?{' '}
+            <Link href="/login" className="text-emerald-400 hover:underline font-semibold">
+              Fazer Login
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

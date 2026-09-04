@@ -18,6 +18,8 @@ export async function GET(req: Request) {
         email: true,
         avatarColor: true,
         role: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
         createdAt: true,
       },
     });
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, email, pin, role = 'USER', avatarColor = '#6366f1' } = body;
+    const { name, email, pin, role = 'USER', avatarColor = '#6366f1', subscriptionStatus = 'TRIAL', trialDays = 7 } = body;
 
     if (!name || !email || !pin) {
       return NextResponse.json({ error: 'Nome, E-mail e PIN/Senha são obrigatórios' }, { status: 400 });
@@ -54,6 +56,9 @@ export async function POST(req: Request) {
 
     const userId = `usr_${crypto.randomUUID()}`;
     const pinHash = hashPin(String(pin).trim());
+    const finalRole = role === 'ADMIN' ? 'ADMIN' : 'USER';
+    const trialEndsAt = finalRole === 'ADMIN' ? null : new Date(Date.now() + (trialDays || 7) * 24 * 60 * 60 * 1000).toISOString();
+    const finalStatus = finalRole === 'ADMIN' ? 'ACTIVE' : subscriptionStatus;
 
     await db.insert(s.users).values({
       id: userId,
@@ -61,7 +66,9 @@ export async function POST(req: Request) {
       email: normalizedEmail,
       pinHash,
       avatarColor,
-      role: role === 'ADMIN' ? 'ADMIN' : 'USER',
+      role: finalRole,
+      subscriptionStatus: finalStatus,
+      trialEndsAt,
     });
 
     await seedDefaultUserCategories(userId);
@@ -73,12 +80,86 @@ export async function POST(req: Request) {
         name: String(name).trim(),
         email: normalizedEmail,
         avatarColor,
-        role: role === 'ADMIN' ? 'ADMIN' : 'USER',
+        role: finalRole,
+        subscriptionStatus: finalStatus,
+        trialEndsAt,
       },
     });
   } catch (error: any) {
     console.error('Admin create user error:', error);
     return NextResponse.json({ error: error.message || 'Erro ao criar usuário' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const authUser = await getAuthUserFromRequest(req);
+    if (!authUser || authUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem atualizar usuários.' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { userId, subscriptionStatus, trialEndsAt, extendDays, role } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'ID do usuário é obrigatório' }, { status: 400 });
+    }
+
+    const targetUser = await db.query.users.findFirst({
+      where: eq(s.users.id, userId),
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    }
+
+    const updateData: Record<string, any> = {};
+
+    if (subscriptionStatus) {
+      updateData.subscriptionStatus = subscriptionStatus;
+    }
+
+    if (role) {
+      updateData.role = role;
+    }
+
+    if (extendDays && typeof extendDays === 'number') {
+      const baseDate = targetUser.trialEndsAt && new Date(targetUser.trialEndsAt) > new Date()
+        ? new Date(targetUser.trialEndsAt)
+        : new Date();
+      baseDate.setDate(baseDate.getDate() + extendDays);
+      updateData.trialEndsAt = baseDate.toISOString();
+      if (!subscriptionStatus) {
+        updateData.subscriptionStatus = 'TRIAL';
+      }
+    } else if (trialEndsAt !== undefined) {
+      updateData.trialEndsAt = trialEndsAt;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
+    }
+
+    await db.update(s.users).set(updateData).where(eq(s.users.id, userId));
+
+    const updatedUser = await db.query.users.findFirst({
+      where: eq(s.users.id, userId),
+      columns: {
+        id: true,
+        name: true,
+        email: true,
+        avatarColor: true,
+        role: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (error: any) {
+    console.error('Admin update user error:', error);
+    return NextResponse.json({ error: error.message || 'Erro ao atualizar usuário' }, { status: 500 });
   }
 }
 

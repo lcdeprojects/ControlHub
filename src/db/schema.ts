@@ -9,6 +9,8 @@ export const users = sqliteTable('users', {
   pinHash: text('pin_hash'),
   avatarColor: text('avatar_color').default('#6366f1'),
   role: text('role').$type<'ADMIN' | 'USER'>().default('USER'),
+  subscriptionStatus: text('subscription_status').$type<'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED'>().default('TRIAL'),
+  trialEndsAt: text('trial_ends_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

@@ -6,14 +6,18 @@ import { normalizeTransactionDescription } from '@/lib/engines/matching-algorith
 import { calculateInvoiceCycle } from '@/lib/engines/invoice-cycle';
 import { generateInstallments } from '@/lib/engines/installment-engine';
 import { eq, desc, asc, gte, lte, and, SQL } from 'drizzle-orm';
-import { getAuthUserId } from '@/lib/auth';
+import { getAuthUserId, requireActiveSubscription } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     await ensureDatabaseSchema();
-    const userId = await getAuthUserId(request);
+    const subCheck = await requireActiveSubscription(request);
+    if ('error' in subCheck) {
+      return NextResponse.json({ error: subCheck.error, isExpired: subCheck.isExpired }, { status: subCheck.status });
+    }
+    const userId = subCheck.user.id;
     const { searchParams } = new URL(request.url);
 
     const sortBy = searchParams.get('sortBy') || 'date'; // 'date' | 'amount' | 'description'
@@ -73,7 +77,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await ensureDatabaseSchema();
-    const authUserId = await getAuthUserId(request);
+    const subCheck = await requireActiveSubscription(request);
+    if ('error' in subCheck) {
+      return NextResponse.json({ error: subCheck.error, isExpired: subCheck.isExpired }, { status: subCheck.status });
+    }
+    const authUserId = subCheck.user.id;
     const body = await request.json();
     const {
       type,

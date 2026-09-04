@@ -580,6 +580,8 @@ export async function ensureDatabaseSchema() {
       await addColumnIfNotExists('users', 'pin_hash', 'TEXT');
       await addColumnIfNotExists('users', 'avatar_color', "TEXT DEFAULT '#6366f1'");
       await addColumnIfNotExists('users', 'role', "TEXT DEFAULT 'USER'");
+      await addColumnIfNotExists('users', 'subscription_status', "TEXT DEFAULT 'TRIAL'");
+      await addColumnIfNotExists('users', 'trial_ends_at', 'TEXT');
       await db.run(sql`
         CREATE TABLE IF NOT EXISTS sessions (
           id TEXT PRIMARY KEY,
@@ -590,12 +592,12 @@ export async function ensureDatabaseSchema() {
       `).catch(() => {});
 
       // Inserir/Atualizar Usuário Administrador lucasconto
-      const adminPinHash = crypto.createHash('sha256').update('controlhub_salt_Senha@123').digest('hex');
+      const adminPinHash = crypto.createHash('sha256').update('nexumhub_salt_Senha@123').digest('hex');
       try {
         await db.insert(s.users).values({
           id: 'usr_admin_lucas',
           name: 'Lucas Conto',
-          email: 'lucasconto@controlhub.app',
+          email: 'lucasconto@nexumhub.app',
           pinHash: adminPinHash,
           avatarColor: '#10b981',
           role: 'ADMIN',
@@ -604,7 +606,7 @@ export async function ensureDatabaseSchema() {
         await db.run(sql`
           UPDATE users 
           SET role = 'ADMIN', pin_hash = ${adminPinHash} 
-          WHERE email = 'lucasconto@controlhub.app' OR email = 'lucasconto' OR id = 'usr_admin_lucas'
+          WHERE email = 'lucasconto@nexumhub.app' OR email = 'lucasconto@controlhub.app' OR email = 'lucasconto' OR id = 'usr_admin_lucas'
         `);
 
         // Migrar dados existentes do usuário legado (usr_default) para o administrador lucasconto
@@ -626,7 +628,7 @@ export async function ensureDatabaseSchema() {
       await db.insert(s.users).values({
         id: 'usr_default',
         name: 'Leonardo C.',
-        email: 'leonardo@controlhub.app',
+        email: 'leonardo@nexumhub.app',
         pinHash: '1234',
         avatarColor: '#6366f1',
         role: 'USER',

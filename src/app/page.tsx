@@ -166,7 +166,7 @@ export default function DashboardPage() {
 
           <div className="pt-2 text-center">
             <span className="text-[11px] text-slate-500">
-              ControlHub Pro • Sincronizado com o Mês Ativo
+              NexumHub Pro • Sincronizado com o Mês Ativo
             </span>
           </div>
         </Card>

@@ -29,7 +29,7 @@ export function DashboardShowcase() {
           <div className="w-3 h-3 rounded-full bg-rose-500/80" />
           <div className="w-3 h-3 rounded-full bg-amber-500/80" />
           <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-          <span className="text-[11px] font-mono text-zinc-500 ml-2">app.controlhub.com/dashboard</span>
+          <span className="text-[11px] font-mono text-zinc-500 ml-2">app.nexumhub.com/dashboard</span>
         </div>
 
         <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">

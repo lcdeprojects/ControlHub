@@ -35,7 +35,7 @@ export function generateRegistrationOptions(userId: string, userName: string, us
   return {
     challenge,
     rp: {
-      name: 'ControlHub Financial',
+      name: 'NexumHub Financial',
       id: typeof window !== 'undefined' ? window.location.hostname : 'localhost',
     },
     user: {

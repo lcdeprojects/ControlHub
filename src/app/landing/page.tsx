@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { DashboardShowcase } from '@/components/landing/DashboardShowcase';
-import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+import { NexumHubLogo } from '@/components/ui/NexumHubLogo';
 import {
   CreditCard,
   FileSpreadsheet,
@@ -61,7 +61,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-sm sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed font-normal"
           >
-            Esqueça planilhas manuais e surpresas na fatura do cartão. O ControlHub consolida cartões de crédito, contas bancárias, importações automáticas e orçamento familiar em um único painel inteligente.
+            Esqueça planilhas manuais e surpresas na fatura do cartão. O NexumHub consolida cartões de crédito, contas bancárias, importações automáticas e orçamento familiar em um único painel inteligente.
           </motion.p>
 
           {/* Hero CTAs */}
@@ -248,7 +248,7 @@ export default function LandingPage() {
             Invista na sua liberdade e clareza financeira
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400">
-            Sem taxas escondidas nem pegadinhas. Acesso completo a todas as ferramentas do ControlHub Pro.
+            Sem taxas escondidas nem pegadinhas. Acesso completo a todas as ferramentas do NexumHub Pro.
           </p>
         </div>
 
@@ -265,7 +265,7 @@ export default function LandingPage() {
             {/* Price Column */}
             <div className="lg:col-span-5 space-y-4 text-center lg:text-left border-b lg:border-b-0 lg:border-r border-zinc-800 pb-6 lg:pb-0 lg:pr-8">
               <span className="text-xs font-extrabold text-zinc-400 uppercase tracking-widest block">
-                Plano ControlHub Pro
+                Plano NexumHub Pro
               </span>
 
               <div className="space-y-1">
@@ -303,7 +303,7 @@ export default function LandingPage() {
             {/* Checklist Column */}
             <div className="lg:col-span-7 space-y-4">
               <h3 className="text-sm font-black uppercase tracking-wider text-zinc-300">
-                Tudo o que está incluso no ControlHub Pro:
+                Tudo o que está incluso no NexumHub Pro:
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-zinc-300">
@@ -336,7 +336,7 @@ export default function LandingPage() {
       <footer className="border-t border-zinc-900 bg-zinc-950 py-8 text-zinc-500 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link href="/landing">
-            <ControlHubLogo size="sm" showText={true} />
+            <NexumHubLogo size="sm" showText={true} />
           </Link>
 
           <div className="flex items-center gap-6 font-medium text-zinc-400">

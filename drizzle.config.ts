@@ -5,6 +5,6 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'turso',
   dbCredentials: {
-    url: 'file:controlhub.db',
+    url: 'file:nexumhub.db',
   },
 });

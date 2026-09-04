@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+import { NexumHubLogo } from '@/components/ui/NexumHubLogo';
 import { Lock, KeyRound, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 function ResetPasswordContent() {
@@ -107,7 +107,7 @@ function ResetPasswordContent() {
     <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
       {/* Brand Header */}
       <div className="flex flex-col items-center text-center mb-6">
-        <ControlHubLogo size="xl" className="mb-2" />
+        <NexumHubLogo size="xl" className="mb-2" />
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold mt-2">
           <KeyRound className="w-3.5 h-3.5" />
           Redefinição de Senha

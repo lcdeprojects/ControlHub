@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       .values({
         id: 'usr_default',
         name: 'Leonardo C.',
-        email: 'usuario@controlhub.app',
+        email: 'usuario@nexumhub.app',
       })
       .onConflictDoNothing();
 

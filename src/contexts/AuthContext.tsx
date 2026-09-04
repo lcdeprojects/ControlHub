@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { isSubscriptionExpired } from '@/lib/subscription';
 
 export interface User {
   id: string;
@@ -9,6 +10,8 @@ export interface User {
   email: string;
   avatarColor?: string;
   role?: 'ADMIN' | 'USER';
+  subscriptionStatus?: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+  trialEndsAt?: string | null;
 }
 
 interface AuthContextType {
@@ -63,7 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user);
-      router.push('/');
+      if (isSubscriptionExpired(data.user)) {
+        router.push('/checkout');
+      } else {
+        router.push('/');
+      }
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'Falha na conexão' };
@@ -84,7 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user);
-      router.push('/');
+      if (isSubscriptionExpired(data.user)) {
+        router.push('/checkout');
+      } else {
+        router.push('/');
+      }
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'Falha na conexão' };

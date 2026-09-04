@@ -27,10 +27,9 @@ yarn-error.log*
 .env
 
 # database
-controlhub.db
-controlhub.db-journal
-controlhub.db-shm
-controlhub.db-wal
+controlhub.db*
+nexumhub.db*
+
 
 # typescript
 *.tsbuildinfo

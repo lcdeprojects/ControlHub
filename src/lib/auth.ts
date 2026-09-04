@@ -4,18 +4,19 @@ import { db } from '@/db';
 import * as s from '@/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 
-export const SESSION_COOKIE_NAME = 'controlhub_session';
+export const SESSION_COOKIE_NAME = 'nexumhub_session';
 const SESSION_DURATION_DAYS = 30;
 
 export function hashPin(pin: string): string {
-  return crypto.createHash('sha256').update(`controlhub_salt_${pin}`).digest('hex');
+  return crypto.createHash('sha256').update(`nexumhub_salt_${pin}`).digest('hex');
 }
 
 export function verifyPin(pin: string, storedHash?: string | null): boolean {
   if (!storedHash) return false;
   // Permite comparação direta se a senha não estiver em hash (retrocompatibilidade com '1234')
   if (storedHash === pin) return true;
-  return hashPin(pin) === storedHash;
+  const legacyHash = crypto.createHash('sha256').update(`controlhub_salt_${pin}`).digest('hex');
+  return hashPin(pin) === storedHash || storedHash === legacyHash;
 }
 
 export async function createSession(userId: string): Promise<string> {
@@ -93,6 +94,25 @@ export async function getAuthUserFromRequest(req?: Request) {
 export async function getAuthUserId(req?: Request): Promise<string> {
   const user = await getAuthUserFromRequest(req);
   return user?.id || '';
+}
+
+import { isSubscriptionExpired } from './subscription';
+
+export { isSubscriptionExpired };
+
+export async function requireActiveSubscription(req: Request) {
+  const user = await getAuthUserFromRequest(req);
+  if (!user) {
+    return { error: 'Não autorizado', status: 401 };
+  }
+  if (isSubscriptionExpired(user)) {
+    return {
+      error: 'Seu período de degustação de 7 dias expirou. Assine um plano para continuar.',
+      status: 402,
+      isExpired: true,
+    };
+  }
+  return { user };
 }
 
 export async function seedDefaultUserCategories(userId: string) {

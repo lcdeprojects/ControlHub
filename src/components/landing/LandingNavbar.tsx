@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Menu, X, Sparkles } from 'lucide-react';
-import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+import { NexumHubLogo } from '@/components/ui/NexumHubLogo';
 
 export function LandingNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -13,7 +13,7 @@ export function LandingNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Official Brand Logo */}
         <Link href="/landing">
-          <ControlHubLogo size="md" showText={true} />
+          <NexumHubLogo size="md" showText={true} />
         </Link>
 
         {/* Desktop Nav Links */}

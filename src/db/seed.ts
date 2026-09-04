@@ -5,13 +5,13 @@ import { generateInstallments } from '../lib/engines/installment-engine';
 import { generateTransactionFingerprint } from '../lib/engines/fingerprint';
 
 export async function seedDatabase() {
-  console.log('🌱 Semeando banco de dados do ControlHub...');
+  console.log('🌱 Semeando banco de dados do NexumHub...');
 
   // 1. Criar Usuário Padrão
   const user = {
     id: 'usr_default',
     name: 'Leonardo C.',
-    email: 'leonardo@controlhub.app',
+    email: 'leonardo@nexumhub.app',
   };
   await db.insert(s.users).values(user).onConflictDoNothing();
 

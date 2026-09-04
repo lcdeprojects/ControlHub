@@ -15,8 +15,8 @@ export async function POST(req: Request) {
     }
 
     let normalizedEmail = String(email).trim().toLowerCase();
-    if (normalizedEmail === 'lucasconto') {
-      normalizedEmail = 'lucasconto@controlhub.app';
+    if (normalizedEmail === 'lucasconto' || normalizedEmail === 'lucasconto@controlhub.app') {
+      normalizedEmail = 'lucasconto@nexumhub.app';
     }
 
     // 1. Aplicar Rate Limiting Anti-Força Bruta

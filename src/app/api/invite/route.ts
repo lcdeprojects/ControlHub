@@ -64,6 +64,8 @@ export async function POST(req: Request) {
     const pinHash = hashPin(String(pin).trim());
     const finalName = (name || invite.name).trim();
 
+    const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
     // 1. Criar novo usuário
     await db.insert(s.users).values({
       id: userId,
@@ -72,6 +74,8 @@ export async function POST(req: Request) {
       pinHash,
       role: invite.role || 'USER',
       avatarColor: avatarColor || '#6366f1',
+      subscriptionStatus: invite.role === 'ADMIN' ? 'ACTIVE' : 'TRIAL',
+      trialEndsAt: invite.role === 'ADMIN' ? null : trialEndsAt,
     });
 
     // 2. Marcar convite como utilizado

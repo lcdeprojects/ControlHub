@@ -42,12 +42,12 @@ export default function ReportsPage() {
       return;
     }
     // Cria download direto de CSV simples
-    const content = `ControlHub - Relatorio Financeiro\nTipo: ${reportType}\nData: 31/08/2026\nReceitas: R$ 21.450,00\nDespesas: R$ 12.450,00\nEconomia: R$ 9.000,00\nTaxa de Poupanca: 42%`;
+    const content = `NexumHub - Relatorio Financeiro\nTipo: ${reportType}\nData: 31/08/2026\nReceitas: R$ 21.450,00\nDespesas: R$ 12.450,00\nEconomia: R$ 9.000,00\nTaxa de Poupanca: 42%`;
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_controlhub_${Date.now()}.${format.toLowerCase()}`);
+    link.setAttribute('download', `relatorio_nexumhub_${Date.now()}.${format.toLowerCase()}`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

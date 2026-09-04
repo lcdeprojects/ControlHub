@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+import { NexumHubLogo } from '@/components/ui/NexumHubLogo';
 
 interface NavItem {
   label: string;
@@ -87,7 +87,7 @@ export function Sidebar() {
     <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r border-zinc-800/80 bg-zinc-950/95 p-4 sticky top-0 z-40 select-none">
       {/* Brand Header */}
       <div className="px-2 py-3 mb-2">
-        <ControlHubLogo size="md" />
+        <NexumHubLogo size="md" />
       </div>
 
       {/* Grouped Navigation Items */}

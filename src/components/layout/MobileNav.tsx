@@ -138,7 +138,7 @@ export function MobileNav() {
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         title="Menu & Módulos"
-        description="Navegação organizada por grupos do ControlHub"
+        description="Navegação organizada por grupos do NexumHub"
         maxWidth="max-w-md"
       >
         <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1 select-none">

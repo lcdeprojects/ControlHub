@@ -2,8 +2,8 @@
  * Motor de Disparo de Eventos e Broadcast Channel para Sincronização em Tempo Real entre Abas
  */
 
-export const SYNC_EVENT_NAME = 'controlhub:data-changed';
-export const BROADCAST_CHANNEL_NAME = 'controlhub_sync_channel';
+export const SYNC_EVENT_NAME = 'nexumhub:data-changed';
+export const BROADCAST_CHANNEL_NAME = 'nexumhub_sync_channel';
 
 let channel: BroadcastChannel | null = null;
 

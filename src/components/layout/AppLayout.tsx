@@ -6,9 +6,10 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { useAuth } from '@/contexts/AuthContext';
-import { ShieldCheck } from 'lucide-react';
+import { isSubscriptionExpired } from '@/lib/subscription';
+import { ShieldCheck, AlertTriangle } from 'lucide-react';
 
-const PUBLIC_PATHS = ['/login', '/register', '/reset-password', '/landing'];
+const PUBLIC_PATHS = ['/login', '/register', '/reset-password', '/landing', '/checkout'];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,17 +20,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     (path) => pathname === path || pathname.startsWith(path + '/')
   );
 
+  const isExpired = isSubscriptionExpired(user);
+
   useEffect(() => {
     if (!loading) {
       if (!user && !isPublicPage) {
         router.push('/landing');
       } else if (user && (pathname === '/login' || pathname === '/landing')) {
-        router.push('/');
+        if (isExpired) {
+          router.push('/checkout');
+        } else {
+          router.push('/');
+        }
+      } else if (user && isExpired && pathname !== '/checkout') {
+        // Redireciona usuário com teste/assinatura expirada para a tela de checkout
+        router.push('/checkout');
       } else if (user && pathname === '/admin' && user.role !== 'ADMIN') {
         router.push('/');
       }
     }
-  }, [user, loading, isPublicPage, pathname, router]);
+  }, [user, loading, isPublicPage, isExpired, pathname, router]);
 
   if (isPublicPage) {
     return (
@@ -54,6 +64,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
+  if (isExpired && pathname !== '/checkout') {
+    return (
+      <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-3 p-6 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center animate-bounce">
+          <AlertTriangle className="w-6 h-6 text-rose-400" />
+        </div>
+        <h2 className="text-lg font-bold text-white">Período de Teste Expirado</h2>
+        <p className="text-xs text-zinc-400 max-w-sm">
+          Redirecionando você para a página de assinaturas e pagamento...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex w-full">
       <Sidebar />
@@ -67,3 +91,4 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

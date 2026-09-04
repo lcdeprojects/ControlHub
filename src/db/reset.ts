@@ -2,7 +2,7 @@ import { db } from './index';
 import * as s from './schema';
 
 export async function resetDatabase() {
-  console.log('🧹 Limpando todos os dados transacionais e cadastrais do ControlHub...');
+  console.log('🧹 Limpando todos os dados transacionais e cadastrais do NexumHub...');
 
   // 1. Limpar tabelas dependentes
   await db.delete(s.transactions);
@@ -23,7 +23,7 @@ export async function resetDatabase() {
   const user = {
     id: 'usr_default',
     name: 'Leonardo C.',
-    email: 'leonardo@controlhub.app',
+    email: 'leonardo@nexumhub.app',
   };
   await db.insert(s.users).values(user).onConflictDoNothing();
 

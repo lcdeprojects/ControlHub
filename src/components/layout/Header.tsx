@@ -9,6 +9,9 @@ import {
   LogOut,
   User as UserIcon,
   RefreshCw,
+  Sparkles,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { formatMonthYear } from '@/lib/utils';
 import { QuickActionModal } from '../dashboard/QuickActionModal';
@@ -16,7 +19,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import Link from 'next/link';
-import { ControlHubLogo } from '../ui/ControlHubLogo';
+import { NexumHubLogo } from '../ui/NexumHubLogo';
 
 export function Header() {
   const { month, year, nextMonth, prevMonth } = usePeriod();
@@ -31,7 +34,7 @@ export function Header() {
       <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
         {/* Mobile Brand Logo */}
         <div className="flex lg:hidden items-center">
-          <ControlHubLogo size="sm" showText={true} />
+          <NexumHubLogo size="sm" showText={true} />
         </div>
 
         {/* Competence Period Selector + Sync Indicator */}
@@ -75,6 +78,48 @@ export function Header() {
 
         {/* Global Actions & User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Trial Status Badge */}
+          {user && user.role !== 'ADMIN' && user.subscriptionStatus !== 'ACTIVE' && (
+            (() => {
+              if (!user.trialEndsAt) {
+                return (
+                  <Link
+                    href="/landing#pricing"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition-all"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Degustação Pro</span>
+                  </Link>
+                );
+              }
+              const now = new Date().getTime();
+              const trialEnd = new Date(user.trialEndsAt).getTime();
+              const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+
+              if (daysLeft <= 0 || user.subscriptionStatus === 'EXPIRED') {
+                return (
+                  <Link
+                    href="/landing#pricing"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold hover:bg-rose-500/30 transition-all animate-pulse"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Teste Expirado • Assinar Pro</span>
+                  </Link>
+                );
+              }
+
+              return (
+                <Link
+                  href="/landing#pricing"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{daysLeft} dia{daysLeft > 1 ? 's' : ''} de Teste Grátis</span>
+                </Link>
+              );
+            })()
+          )}
+
           <button
             onClick={() => setIsQuickActionOpen(true)}
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all duration-200 active:scale-95 cursor-pointer"

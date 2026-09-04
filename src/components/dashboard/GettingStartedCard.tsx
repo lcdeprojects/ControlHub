@@ -28,8 +28,8 @@ interface SetupStatus {
   isFullyCompleted: boolean;
 }
 
-const STORAGE_KEY_DISMISSED = 'controlhub_getting_started_dismissed';
-const STORAGE_KEY_COLLAPSED = 'controlhub_getting_started_collapsed';
+const STORAGE_KEY_DISMISSED = 'nexumhub_getting_started_dismissed';
+const STORAGE_KEY_COLLAPSED = 'nexumhub_getting_started_collapsed';
 
 export function GettingStartedCard() {
   const [status, setStatus] = useState<SetupStatus | null>(null);
@@ -162,7 +162,7 @@ export function GettingStartedCard() {
               </span>
             </div>
             <h3 className="text-base sm:text-lg font-black text-white mt-0.5">
-              Primeiros Passos no ControlHub
+              Primeiros Passos no NexumHub
             </h3>
           </div>
         </div>

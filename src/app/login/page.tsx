@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LogIn, Lock, Mail, UserCheck, KeyRound, HelpCircle } from 'lucide-react';
-import { ControlHubLogo } from '@/components/ui/ControlHubLogo';
+import { NexumHubLogo } from '@/components/ui/NexumHubLogo';
 import { Modal } from '@/components/ui/Modal';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -44,7 +45,7 @@ export default function LoginPage() {
     <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
       {/* Brand Header */}
       <div className="flex flex-col items-center text-center mb-8">
-        <ControlHubLogo size="xl" className="mb-2" />
+        <NexumHubLogo size="xl" className="mb-2" />
         <p className="text-xs text-zinc-400 font-medium mt-1">Gestão Financeira Executiva & Controle de Ativos</p>
       </div>
 
@@ -54,6 +55,17 @@ export default function LoginPage() {
           <div className="flex items-center gap-2">
             <LogIn className="w-5 h-5 text-emerald-400" />
             <h2 className="text-base font-semibold text-white">Acesse sua Conta</h2>
+          </div>
+        </div>
+
+        {/* Google 1-Click Login */}
+        <div className="space-y-3">
+          <GoogleSignInButton label="Entrar com o Google" />
+          <div className="relative flex items-center justify-center">
+            <div className="w-full border-t border-zinc-800" />
+            <span className="bg-zinc-900 px-3 text-[11px] text-zinc-500 uppercase tracking-wider font-semibold absolute">
+              ou com e-mail
+            </span>
           </div>
         </div>
 

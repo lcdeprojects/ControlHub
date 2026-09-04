@@ -2,10 +2,10 @@ import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96-bit IV para AES-GCM
-const SALT = 'controlhub_aes256_salt_v1';
+const SALT = 'nexumhub_aes256_salt_v1';
 
 function getEncryptionKey(): Buffer {
-  const secret = process.env.ENCRYPTION_SECRET || 'controlhub_default_secret_key_change_in_prod';
+  const secret = process.env.ENCRYPTION_SECRET || 'nexumhub_default_secret_key_change_in_prod';
   return crypto.scryptSync(secret, SALT, 32);
 }
 
