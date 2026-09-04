@@ -36,19 +36,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/auth/me', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user || null);
+        const freshUser = data.user || null;
+        setUser(freshUser);
+        if (freshUser) {
+          try {
+            localStorage.setItem('controlhub_user', JSON.stringify(freshUser));
+          } catch (e) {}
+        } else {
+          try {
+            localStorage.removeItem('controlhub_user');
+          } catch (e) {}
+        }
       } else {
         setUser(null);
+        try {
+          localStorage.removeItem('controlhub_user');
+        } catch (e) {}
       }
     } catch (err) {
       console.error('Error loading auth user:', err);
       setUser(null);
+      try {
+        localStorage.removeItem('controlhub_user');
+      } catch (e) {}
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('controlhub_user');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.id) {
+          setUser(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      // Ignora erro de parsing
+    }
+
     refreshUser();
   }, []);
 
@@ -66,6 +95,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user);
+      try {
+        localStorage.setItem('controlhub_user', JSON.stringify(data.user));
+      } catch (e) {}
+
       if (isSubscriptionExpired(data.user)) {
         router.push('/checkout');
       } else {
@@ -91,6 +124,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user);
+      try {
+        localStorage.setItem('controlhub_user', JSON.stringify(data.user));
+      } catch (e) {}
+
       if (isSubscriptionExpired(data.user)) {
         router.push('/checkout');
       } else {
@@ -109,6 +146,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error logging out:', err);
     } finally {
       setUser(null);
+      try {
+        localStorage.removeItem('controlhub_user');
+      } catch (e) {}
       router.push('/login');
     }
   };

@@ -41,14 +41,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, isPublicPage, isExpired, pathname, router]);
 
-  if (isPublicPage) {
-    return (
-      <div className="w-full min-h-screen bg-zinc-950 text-zinc-100">
-        {children}
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-3">
@@ -56,6 +48,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
         </div>
         <p className="text-xs text-zinc-400 font-medium">Verificando autenticação...</p>
+      </div>
+    );
+  }
+
+  if (user && (pathname === '/login' || pathname === '/landing')) {
+    return (
+      <div className="w-full min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center animate-pulse">
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+        </div>
+        <p className="text-xs text-zinc-400 font-medium">Redirecionando...</p>
+      </div>
+    );
+  }
+
+  if (isPublicPage) {
+    return (
+      <div className="w-full min-h-screen bg-zinc-950 text-zinc-100">
+        {children}
       </div>
     );
   }
