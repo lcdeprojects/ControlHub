@@ -78,14 +78,14 @@ export function Header() {
 
         {/* Global Actions & User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Trial Status Badge */}
+          {/* Trial Status Badge (Visible on Mobile & Desktop) */}
           {user && user.role !== 'ADMIN' && user.subscriptionStatus !== 'ACTIVE' && (
             (() => {
               if (!user.trialEndsAt) {
                 return (
                   <Link
-                    href="/landing#pricing"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition-all"
+                    href="/checkout"
+                    className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] sm:text-xs font-bold hover:bg-amber-500/20 transition-all shrink-0"
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span>Degustação Pro</span>
@@ -99,22 +99,22 @@ export function Header() {
               if (daysLeft <= 0 || user.subscriptionStatus === 'EXPIRED') {
                 return (
                   <Link
-                    href="/landing#pricing"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold hover:bg-rose-500/30 transition-all animate-pulse"
+                    href="/checkout"
+                    className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] sm:text-xs font-bold hover:bg-rose-500/30 transition-all animate-pulse shrink-0"
                   >
                     <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Teste Expirado • Assinar Pro</span>
+                    <span>Expirado • Assinar</span>
                   </Link>
                 );
               }
 
               return (
                 <Link
-                  href="/landing#pricing"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-all"
+                  href="/checkout"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[11px] sm:text-xs font-bold hover:bg-emerald-500/25 transition-all shrink-0"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{daysLeft} dia{daysLeft > 1 ? 's' : ''} de Teste Grátis</span>
+                  <span>{daysLeft}d Grátis</span>
                 </Link>
               );
             })()

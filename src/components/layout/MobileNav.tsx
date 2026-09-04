@@ -19,6 +19,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Settings,
+  Sparkles,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
@@ -142,6 +145,73 @@ export function MobileNav() {
         maxWidth="max-w-md"
       >
         <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1 select-none">
+          {/* Trial Status Card Banner in Mobile Drawer */}
+          {user && user.role !== 'ADMIN' && (
+            <div className="mb-2">
+              {user.subscriptionStatus === 'ACTIVE' ? (
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                      ⚡
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Plano NexumHub PRO</h4>
+                      <p className="text-[10px] text-emerald-400 font-medium">Assinatura ativa e ilimitada</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (() => {
+                const now = new Date().getTime();
+                const trialEnd = user.trialEndsAt ? new Date(user.trialEndsAt).getTime() : 0;
+                const daysLeft = trialEnd > 0 ? Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24)) : 0;
+                const isExpired = daysLeft <= 0 || user.subscriptionStatus === 'EXPIRED';
+
+                if (isExpired) {
+                  return (
+                    <Link
+                      href="/checkout"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-between transition-all hover:bg-rose-500/25"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+                          <AlertTriangle className="w-4 h-4 text-rose-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-white">Período de Teste Expirado</h4>
+                          <p className="text-[10px] text-rose-300 font-medium">Clique para escolher seu plano</p>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold text-[10px]">
+                        Assinar
+                      </span>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <Link
+                    href="/checkout"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between transition-all hover:bg-emerald-500/20"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">{daysLeft} dia{daysLeft > 1 ? 's' : ''} de Teste Grátis</h4>
+                        <p className="text-[10px] text-zinc-400">Aproveite todas as ferramentas Pro</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold text-[10px]">
+                      Ver Planos
+                    </span>
+                  </Link>
+                );
+              })()}
+            </div>
+          )}
           {moduleGroups.map((group, idx) => (
             <div key={idx} className="space-y-2">
               <span className="text-[10px] font-black tracking-widest uppercase text-zinc-500 block px-1">

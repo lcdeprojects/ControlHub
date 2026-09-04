@@ -115,7 +115,7 @@ function RegisterContent() {
         <NexumHubLogo size="xl" className="mb-2" />
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mt-2">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>7 Dias de Degustação Grátis • NexumHub Pro</span>
+          <span>7 Dias Grátis • NexumHub</span>
         </span>
       </div>
 
@@ -173,9 +173,8 @@ function RegisterContent() {
                 value={inviteData ? inviteData.email : email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seuemail@exemplo.com"
-                className={`w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors ${
-                  inviteData ? 'cursor-not-allowed opacity-75' : ''
-                }`}
+                className={`w-full bg-zinc-950/70 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors ${inviteData ? 'cursor-not-allowed opacity-75' : ''
+                  }`}
               />
             </div>
           </div>
