@@ -34,14 +34,16 @@ export async function POST(req: Request) {
     let fromNumber = '';
 
     // 1. Payload da Evolution API (MESSAGES_UPSERT)
-    if (body.data?.key) {
-      if (body.data.key.fromMe) {
+    if (body.data?.key || body.data?.message || body.event === 'messages.upsert' || body.event === 'MESSAGES_UPSERT') {
+      const keyData = body.data?.key || body.key || {};
+      if (keyData.fromMe) {
         // Ignora mensagens enviadas pelo próprio robô para evitar loop
         return NextResponse.json({ success: true, ignored: 'fromMe' });
       }
-      const jid = body.data.key.remoteJid || '';
+      const jid = keyData.remoteJid || body.data?.remoteJid || body.sender || '';
       fromNumber = jid.split('@')[0];
-      text = body.data.message?.conversation || body.data.message?.extendedTextMessage?.text || '';
+      const msgObj = body.data?.message || body.message || {};
+      text = msgObj.conversation || msgObj.extendedTextMessage?.text || msgObj.imageMessage?.caption || msgObj.videoMessage?.caption || '';
     } else if (body.entry && body.entry[0]?.changes[0]?.value?.messages[0]) {
       // 2. Meta Cloud API
       const msgObj = body.entry[0].changes[0].value.messages[0];
@@ -49,8 +51,8 @@ export async function POST(req: Request) {
       fromNumber = msgObj.from || '';
     } else {
       // 3. Z-API / Generic Payload
-      text = body.text || body.message || body.body || '';
-      fromNumber = body.from || body.phone || '';
+      text = body.text || body.message || body.body || body.data?.conversation || '';
+      fromNumber = body.from || body.phone || body.sender || '';
     }
 
     text = (text || '').trim();
