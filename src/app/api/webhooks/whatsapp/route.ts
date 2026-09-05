@@ -83,6 +83,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, ignored: 'fromMe' });
       }
       const jid = keyData.remoteJid || body.data?.remoteJid || body.sender || '';
+
+      // Ignora mensagens enviadas em grupos do WhatsApp
+      if (jid.includes('@g.us') || body.data?.isGroup || body.isGroup) {
+        return NextResponse.json({ success: true, ignored: 'groupMessage' });
+      }
+
       fromNumber = jid.split('@')[0];
       const msgObj = body.data?.message || body.message || {};
       text = msgObj.conversation || msgObj.extendedTextMessage?.text || msgObj.imageMessage?.caption || msgObj.videoMessage?.caption || '';
@@ -93,8 +99,17 @@ export async function POST(req: Request) {
       fromNumber = msgObj.from || '';
     } else {
       // 3. Z-API / Generic Payload
+      const rawFrom = body.from || body.phone || body.sender || '';
+      if (rawFrom.includes('@g.us') || body.isGroup || body.data?.isGroup) {
+        return NextResponse.json({ success: true, ignored: 'groupMessage' });
+      }
       text = body.text || body.message || body.body || body.data?.conversation || '';
-      fromNumber = body.from || body.phone || body.sender || '';
+      fromNumber = rawFrom.split('@')[0];
+    }
+
+    // Trava de segurança adicional para qualquer remetente de grupo
+    if (fromNumber.includes('@g.us')) {
+      return NextResponse.json({ success: true, ignored: 'groupMessage' });
     }
 
     text = (text || '').trim();
