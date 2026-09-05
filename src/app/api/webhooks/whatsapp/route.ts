@@ -78,10 +78,14 @@ export async function POST(req: Request) {
     // 1. Payload da Evolution API (MESSAGES_UPSERT)
     if (body.data?.key || body.data?.message || body.event === 'messages.upsert' || body.event === 'MESSAGES_UPSERT') {
       const keyData = body.data?.key || body.key || {};
-      if (keyData.fromMe) {
-        // Ignora mensagens enviadas pelo próprio robô para evitar loop
-        return NextResponse.json({ success: true, ignored: 'fromMe' });
+      const msgObj = body.data?.message || body.message || {};
+      text = msgObj.conversation || msgObj.extendedTextMessage?.text || msgObj.imageMessage?.caption || msgObj.videoMessage?.caption || '';
+
+      // Evita loops infinitos ignorando respostas geradas pelo próprio robô NexumHub
+      if (text.includes('NexumHub Bot') || text.includes('Lançamento registrado')) {
+        return NextResponse.json({ success: true, ignored: 'botSelfReply' });
       }
+
       const jid = keyData.remoteJid || body.data?.remoteJid || body.sender || '';
 
       // Ignora mensagens enviadas em grupos do WhatsApp
@@ -90,8 +94,11 @@ export async function POST(req: Request) {
       }
 
       fromNumber = jid.split('@')[0];
-      const msgObj = body.data?.message || body.message || {};
-      text = msgObj.conversation || msgObj.extendedTextMessage?.text || msgObj.imageMessage?.caption || msgObj.videoMessage?.caption || '';
+
+      // Se a mensagem veio da própria instância (fromMe), só ignora se for mensagem automática do robô
+      if (keyData.fromMe && (text.includes('NexumHub Bot') || !text)) {
+        return NextResponse.json({ success: true, ignored: 'fromMe' });
+      }
     } else if (body.entry && body.entry[0]?.changes[0]?.value?.messages[0]) {
       // 2. Meta Cloud API
       const msgObj = body.entry[0].changes[0].value.messages[0];
@@ -118,27 +125,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Mensagem vazia' });
     }
 
-    // Identifica o usuário estritamente pelo número de telefone cadastrado
+    // Função de verificação flexível de número (suporta DDDs do Brasil com/sem 9º dígito)
+    const isMatchPhone = (phoneA: string, phoneB: string) => {
+      const cA = phoneA.replace(/\D/g, '');
+      const cB = phoneB.replace(/\D/g, '');
+      if (!cA || !cB) return false;
+      if (cA === cB || cA.endsWith(cB) || cB.endsWith(cA)) return true;
+      const last8A = cA.slice(-8);
+      const last8B = cB.slice(-8);
+      return last8A.length === 8 && last8A === last8B;
+    };
+
+    // Identifica o usuário pelo telefone cadastrado
+    const allUsers = await db.select().from(s.users);
     let user: any = null;
+
     if (fromNumber) {
-      const cleanFrom = fromNumber.replace(/\D/g, '');
-      if (cleanFrom) {
-        const allUsers = await db.select().from(s.users);
-        user = allUsers.find((u) => {
-          if (!u.phoneNumber) return false;
-          const cleanUserPhone = u.phoneNumber.replace(/\D/g, '');
-          return cleanUserPhone && (cleanUserPhone === cleanFrom || cleanFrom.endsWith(cleanUserPhone) || cleanUserPhone.endsWith(cleanFrom));
-        });
-      }
+      user = allUsers.find((u) => u.phoneNumber && isMatchPhone(fromNumber, u.phoneNumber));
     }
 
-    // Fallback opcional apenas se explicitamente habilitado nas variáveis de ambiente
-    if (!user && process.env.ALLOW_UNMATCHED_WHATSAPP_FALLBACK === 'true') {
-      user = await db.query.users.findFirst();
+    // Se houver apenas 1 usuário cadastrado no sistema, associa automaticamente para facilitar testes
+    if (!user && (allUsers.length === 1 || process.env.ALLOW_UNMATCHED_WHATSAPP_FALLBACK === 'true')) {
+      user = allUsers[0];
     }
 
     if (!user) {
-      console.log(`[WhatsApp Webhook] Mensagem ignorada: número ${fromNumber} não está cadastrado em nenhum usuário do sistema.`);
+      console.log(`[WhatsApp Webhook] Mensagem ignorada: número ${fromNumber} não está cadastrado.`);
       return NextResponse.json({
         success: true,
         ignored: 'Telefone não cadastrado no sistema',
