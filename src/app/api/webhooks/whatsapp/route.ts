@@ -8,7 +8,7 @@ import { normalizeTransactionDescription } from '@/lib/engines/matching-algorith
 
 export const dynamic = 'force-dynamic';
 
-// Verification GET for WhatsApp Webhook Setup (Meta / Evolution / Z-API)
+// Verification GET & Test Simulation for WhatsApp Webhook Setup
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get('hub.mode');
@@ -21,7 +21,49 @@ export async function GET(req: Request) {
     return new Response(challenge, { status: 200 });
   }
 
-  return NextResponse.json({ status: 'NexumHub WhatsApp Webhook Ready', timestamp: new Date().toISOString() });
+  // Diagnostic Test Simulation via Browser GET query params
+  const isTest = searchParams.get('test') === 'true';
+  if (isTest) {
+    await ensureDatabaseSchema();
+    const phone = searchParams.get('phone') || '5541988767210';
+    const text = searchParams.get('text') || 'Gastei 45 almoço';
+
+    const cleanFrom = phone.replace(/\D/g, '');
+    const allUsers = await db.select().from(s.users);
+    const matchedUser = allUsers.find((u) => {
+      if (!u.phoneNumber) return false;
+      const cleanUserPhone = u.phoneNumber.replace(/\D/g, '');
+      return cleanUserPhone && (cleanUserPhone === cleanFrom || cleanFrom.endsWith(cleanUserPhone) || cleanUserPhone.endsWith(cleanFrom));
+    });
+
+    const defaultUser = allUsers[0] || null;
+    const activeUser = matchedUser || defaultUser;
+
+    const evolutionUrl = process.env.EVOLUTION_API_URL || null;
+    const evolutionKey = process.env.EVOLUTION_API_KEY ? '*****' + process.env.EVOLUTION_API_KEY.slice(-4) : null;
+    const evolutionInstance = process.env.EVOLUTION_INSTANCE_NAME || 'nexumhub';
+
+    return NextResponse.json({
+      status: 'NexumHub WhatsApp Diagnostic Test',
+      timestamp: new Date().toISOString(),
+      testedPhone: phone,
+      testedText: text,
+      matchedUserByPhone: matchedUser ? { id: matchedUser.id, name: matchedUser.name, email: matchedUser.email, phoneNumber: matchedUser.phoneNumber } : null,
+      defaultFallbackUser: defaultUser ? { id: defaultUser.id, name: defaultUser.name, email: defaultUser.email } : null,
+      activeUserUsed: activeUser ? { id: activeUser.id, name: activeUser.name, email: activeUser.email } : null,
+      environment: {
+        EVOLUTION_API_URL: evolutionUrl,
+        EVOLUTION_API_KEY: evolutionKey ? 'Configurada (OK)' : 'NÃO CONFIGURADA ⚠️',
+        EVOLUTION_INSTANCE_NAME: evolutionInstance,
+      },
+    });
+  }
+
+  return NextResponse.json({
+    status: 'NexumHub WhatsApp Webhook Ready',
+    timestamp: new Date().toISOString(),
+    guide: 'Acesse ?test=true&phone=5541988767210 para testar o diagnóstico',
+  });
 }
 
 // Handler POST for Incoming WhatsApp Messages (Evolution API / Meta / Z-API)
