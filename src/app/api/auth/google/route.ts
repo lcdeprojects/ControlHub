@@ -62,6 +62,7 @@ export async function POST(req: Request) {
         id: userId,
         name: name,
         email: email,
+        phoneNumber: null,
         avatarColor: '#10b981',
         role: 'USER',
         subscriptionStatus: 'TRIAL',
@@ -69,6 +70,10 @@ export async function POST(req: Request) {
         pinHash: null,
         createdAt: new Date().toISOString(),
       };
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'Erro ao identificar ou criar usuário' }, { status: 500 });
     }
 
     // 4. Criar sessão e setar cookie seguro
@@ -79,6 +84,7 @@ export async function POST(req: Request) {
         id: user.id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber || null,
         avatarColor: user.avatarColor,
         role: user.role,
         subscriptionStatus: user.subscriptionStatus,

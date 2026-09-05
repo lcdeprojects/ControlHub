@@ -578,6 +578,7 @@ export async function ensureDatabaseSchema() {
 
       // Users & Sessions
       await addColumnIfNotExists('users', 'pin_hash', 'TEXT');
+      await addColumnIfNotExists('users', 'phone_number', 'TEXT');
       await addColumnIfNotExists('users', 'avatar_color', "TEXT DEFAULT '#6366f1'");
       await addColumnIfNotExists('users', 'role', "TEXT DEFAULT 'USER'");
       await addColumnIfNotExists('users', 'subscription_status', "TEXT DEFAULT 'TRIAL'");

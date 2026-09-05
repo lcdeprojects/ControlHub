@@ -37,6 +37,7 @@ interface UserItem {
   id: string;
   name: string;
   email: string;
+  phoneNumber?: string | null;
   avatarColor?: string;
   role: 'ADMIN' | 'USER';
   subscriptionStatus?: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
@@ -566,6 +567,11 @@ export default function AdminBackofficePage() {
                           <div>
                             <div className="font-semibold text-white text-sm leading-snug">{u.name}</div>
                             <div className="text-xs text-zinc-400 font-mono">{u.email}</div>
+                            {u.phoneNumber && (
+                              <div className="text-[11px] text-emerald-400 font-mono font-medium flex items-center gap-1 mt-0.5">
+                                <span>📱 {u.phoneNumber}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>

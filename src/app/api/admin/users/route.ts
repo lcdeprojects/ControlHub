@@ -16,6 +16,7 @@ export async function GET(req: Request) {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         avatarColor: true,
         role: true,
         subscriptionStatus: true,
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, email, pin, role = 'USER', avatarColor = '#6366f1', subscriptionStatus = 'TRIAL', trialDays = 7 } = body;
+    const { name, email, pin, phoneNumber, role = 'USER', avatarColor = '#6366f1', subscriptionStatus = 'TRIAL', trialDays = 7 } = body;
 
     if (!name || !email || !pin) {
       return NextResponse.json({ error: 'Nome, E-mail e PIN/Senha são obrigatórios' }, { status: 400 });
@@ -59,11 +60,13 @@ export async function POST(req: Request) {
     const finalRole = role === 'ADMIN' ? 'ADMIN' : 'USER';
     const trialEndsAt = finalRole === 'ADMIN' ? null : new Date(Date.now() + (trialDays || 7) * 24 * 60 * 60 * 1000).toISOString();
     const finalStatus = finalRole === 'ADMIN' ? 'ACTIVE' : subscriptionStatus;
+    const cleanPhone = phoneNumber ? String(phoneNumber).trim() : null;
 
     await db.insert(s.users).values({
       id: userId,
       name: String(name).trim(),
       email: normalizedEmail,
+      phoneNumber: cleanPhone,
       pinHash,
       avatarColor,
       role: finalRole,
@@ -79,6 +82,7 @@ export async function POST(req: Request) {
         id: userId,
         name: String(name).trim(),
         email: normalizedEmail,
+        phoneNumber: cleanPhone,
         avatarColor,
         role: finalRole,
         subscriptionStatus: finalStatus,
@@ -99,7 +103,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json();
-    const { userId, subscriptionStatus, trialEndsAt, extendDays, role } = body;
+    const { userId, subscriptionStatus, trialEndsAt, extendDays, role, phoneNumber, name } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'ID do usuário é obrigatório' }, { status: 400 });
@@ -121,6 +125,14 @@ export async function PATCH(req: Request) {
 
     if (role) {
       updateData.role = role;
+    }
+
+    if (name !== undefined) {
+      updateData.name = String(name).trim();
+    }
+
+    if (phoneNumber !== undefined) {
+      updateData.phoneNumber = phoneNumber ? String(phoneNumber).trim() : null;
     }
 
     if (extendDays && typeof extendDays === 'number') {
@@ -148,6 +160,7 @@ export async function PATCH(req: Request) {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         avatarColor: true,
         role: true,
         subscriptionStatus: true,

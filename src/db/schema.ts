@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
+  phoneNumber: text('phone_number'),
   pinHash: text('pin_hash'),
   avatarColor: text('avatar_color').default('#6366f1'),
   role: text('role').$type<'ADMIN' | 'USER'>().default('USER'),

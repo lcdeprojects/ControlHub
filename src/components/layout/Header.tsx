@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatMonthYear } from '@/lib/utils';
 import { QuickActionModal } from '../dashboard/QuickActionModal';
+import { NexumAICopilotModal } from '../ai/NexumAICopilotModal';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
@@ -25,6 +26,7 @@ export function Header() {
   const { month, year, nextMonth, prevMonth } = usePeriod();
   const { user, logout } = useAuth();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const { isSyncing, triggerSync } = useBackgroundSync({
     enabled: Boolean(user),
   });
@@ -120,6 +122,18 @@ export function Header() {
             })()
           )}
 
+          {/* Nexum Copilot AI Button */}
+          {user && (
+            <button
+              onClick={() => setIsCopilotOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+              title="Abrir Assistente de Inteligência Financeira"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span className="hidden md:inline">Copilot IA</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsQuickActionOpen(true)}
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs sm:text-sm font-bold shadow-lg shadow-zinc-950/40 border border-white/20 transition-all duration-200 active:scale-95 cursor-pointer"
@@ -166,6 +180,12 @@ export function Header() {
       <QuickActionModal
         isOpen={isQuickActionOpen}
         onClose={() => setIsQuickActionOpen(false)}
+      />
+
+      {/* Nexum Copilot IA Assistant Modal */}
+      <NexumAICopilotModal
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
       />
     </>
   );
