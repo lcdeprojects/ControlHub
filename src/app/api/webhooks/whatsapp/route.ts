@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { formatCurrency } from '@/lib/utils';
 import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
 import { normalizeTransactionDescription } from '@/lib/engines/matching-algorithm';
+import { seedDefaultUserCategories } from '@/lib/auth';
 
 const CATEGORY_SYNONYMS: Record<string, string[]> = {
   cat_restaurantes: ['almoço', 'almoço', 'almço', 'jantar', 'lanche', 'restaurante', 'ifood', 'comida', 'pf', 'padaria', 'bistrô', 'cafe', 'café', 'mcdonalds', 'burguer', 'pizza', 'sushi'],
@@ -23,45 +24,98 @@ const CATEGORY_SYNONYMS: Record<string, string[]> = {
   cat_rendimentos: ['dividendo', 'rendimento', 'juros', 'investimento'],
 };
 
+function parseWhatsAppMessage(text: string) {
+  const textClean = text.trim();
+  const lower = textClean.toLowerCase();
+
+  // Detecta se é receita ou despesa
+  const isIncome = /\b(recebi|recebido|deposito|depósito|ganhei|pix|entrada|rendimento|salario|salário)\b/i.test(lower) && !/\b(paguei|gastei|gastri|gaste|comprei|envei|enviei)\b/i.test(lower);
+  const txType: 'INCOME' | 'EXPENSE' = isIncome ? 'INCOME' : 'EXPENSE';
+
+  // Extrai valor numérico (suporta 45, 45.00, 45,50, R$ 45, R$45,50)
+  const amountMatch = textClean.match(/(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)/i);
+  if (!amountMatch) {
+    return null;
+  }
+
+  const amountStr = amountMatch[1].replace(',', '.');
+  const amountVal = parseFloat(amountStr);
+  if (isNaN(amountVal) || amountVal <= 0) {
+    return null;
+  }
+
+  // Extrai a descrição removendo o valor, R$, palavras de ação e preposições
+  let rawDesc = textClean
+    .replace(amountMatch[0], '') // remove o valor
+    .replace(/\b(gastei|gastri|gaste|lançar|lancar|adicionar|paguei|pagou|comprei|compra|recebi|de|r\$|em|no|na|com|para)\b/gi, '')
+    .trim();
+
+  // Se a descrição ficou vazia após remover a palavra "pix" ou similares (ex: "Recebi 100 pix" ou "Pix 100")
+  if (!rawDesc && lower.includes('pix')) {
+    rawDesc = 'PIX';
+  } else if (!rawDesc) {
+    rawDesc = 'Lançamento WhatsApp';
+  }
+
+  return {
+    amountVal,
+    rawDesc,
+    isIncome,
+    txType,
+  };
+}
+
 function findBestCategory(desc: string, categories: any[], isIncome: boolean) {
   if (!categories || categories.length === 0) return null;
   const descLower = desc.toLowerCase().trim();
 
-  // 1. Match direto pelo nome da categoria do usuário
-  for (const cat of categories) {
-    const catNameLower = cat.name.toLowerCase();
-    if (descLower.includes(catNameLower) || catNameLower.includes(descLower)) {
-      return cat;
+  // 1. Se for RECEITA, prioriza categorias do tipo INCOME
+  if (isIncome) {
+    const incomeCats = categories.filter((c) => c.type === 'INCOME');
+    if (incomeCats.length > 0) {
+      const matchInc = incomeCats.find((c) =>
+        descLower.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(descLower)
+      );
+      return matchInc || incomeCats[0];
     }
   }
 
-  // 2. Match por sinônimos conhecidos
+  // 2. Despesas: Match exato/parcial pelo NOME da categoria do usuário
+  for (const cat of categories) {
+    const catNameLower = cat.name.toLowerCase().trim();
+    if (catNameLower.length >= 3 && descLower.length >= 3) {
+      if (descLower.includes(catNameLower) || (catNameLower.includes(descLower) && descLower.length >= 4)) {
+        return cat;
+      }
+    }
+  }
+
+  // 3. Match por sinônimos conhecidos
   for (const [sysId, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
-    if (synonyms.some((syn) => descLower.includes(syn))) {
-      const matched = categories.find((c) =>
-        c.id === sysId ||
-        (sysId === 'cat_restaurantes' && (c.name.toLowerCase().includes('restaurante') || c.name.toLowerCase().includes('alimenta'))) ||
-        (sysId === 'cat_mercado' && c.name.toLowerCase().includes('mercado')) ||
-        (sysId === 'cat_combustivel' && (c.name.toLowerCase().includes('combust') || c.name.toLowerCase().includes('posto'))) ||
-        (sysId === 'cat_transporte' && (c.name.toLowerCase().includes('transport') || c.name.toLowerCase().includes('uber'))) ||
-        (sysId === 'cat_saude' && (c.name.toLowerCase().includes('saúde') || c.name.toLowerCase().includes('saude') || c.name.toLowerCase().includes('farmá')))
-      );
+    if (synonyms.some((syn) => descLower.includes(syn) || syn.includes(descLower))) {
+      const matched = categories.find((c) => {
+        const cName = c.name.toLowerCase();
+        if (sysId === 'cat_restaurantes') return cName.includes('restaurante') || cName.includes('alimenta') || cName.includes('comida') || cName.includes('refeição');
+        if (sysId === 'cat_mercado') return cName.includes('mercado') || cName.includes('supermercado');
+        if (sysId === 'cat_combustivel') return cName.includes('combust') || cName.includes('posto') || cName.includes('gasolina');
+        if (sysId === 'cat_transporte') return cName.includes('transport') || cName.includes('uber');
+        if (sysId === 'cat_saude') return cName.includes('saúde') || cName.includes('saude') || cName.includes('farmá') || cName.includes('farmacia');
+        if (sysId === 'cat_lazer') return cName.includes('lazer') || cName.includes('viagem');
+        return c.id === sysId;
+      });
       if (matched) return matched;
     }
   }
 
-  // 3. Fallback inteligente sem pegar categorias específicas indesejadas
-  if (isIncome) {
-    return categories.find((c) => c.type === 'INCOME') || categories[0];
-  }
-
-  // Procura 'Outros', 'Geral', 'Alimentação' ou 'Despesas'
-  const defaultExpense = categories.find((c) =>
-    c.name.toLowerCase().includes('outro') ||
-    c.name.toLowerCase().includes('geral') ||
-    c.name.toLowerCase().includes('despesa') ||
-    c.name.toLowerCase().includes('restaurante')
-  ) || categories.find((c) => c.type === 'EXPENSE') || categories[0];
+  // 4. Fallback genérico seguro (Nunca pega Moujaro se o item não for medicamento)
+  const defaultExpense = categories.find((c) => {
+    const cName = c.name.toLowerCase();
+    return (cName.includes('outro') || cName.includes('geral') || cName.includes('despesa') || cName.includes('diversos')) && c.type !== 'INCOME';
+  }) || categories.find((c) => {
+    const cName = c.name.toLowerCase();
+    return (cName.includes('alimenta') || cName.includes('mercado') || cName.includes('restaurante')) && c.type !== 'INCOME';
+  }) || categories.find((c) => c.type === 'EXPENSE' && !c.name.toLowerCase().includes('moujaro'))
+     || categories[0];
 
   return defaultExpense;
 }
@@ -221,31 +275,27 @@ export async function POST(req: Request) {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    const [accounts, categories] = await Promise.all([
+    let [accounts, categories] = await Promise.all([
       db.select().from(s.accounts).where(eq(s.accounts.userId, userId)),
       db.select().from(s.categories).where(eq(s.categories.userId, userId)),
     ]);
 
-    const msgLower = text.toLowerCase();
+    // Garante que o usuário possua as categorias padrões do sistema sem depender de criação manual
+    if (!categories || categories.length <= 2) {
+      await seedDefaultUserCategories(userId).catch(() => {});
+      categories = await db.select().from(s.categories).where(eq(s.categories.userId, userId));
+    }
+
     let replyMessage = '';
     let txIdCreated: string | null = null;
 
-    // Tenta extrair lançamento do WhatsApp (Ex: "Almoço 45 reais", "Gastei 120 mercado", "Gastri 45 almoço", "Recebi 500 pix")
-    const createMatch = msgLower.match(
-      /(gastei|gastri|gaste|lançar|lancar|adicionar|paguei|pagou|comprei|compra|recebi|pix)?\s*(?:de\s+)?(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:em|no|na|com|para)?\s*(.*)/i
-    );
+    // Extrai informações do lançamento usando o analisador inteligente de mensagens do WhatsApp
+    const parsedMsg = parseWhatsAppMessage(text);
 
-    if (createMatch) {
-      const actionWord = (createMatch[1] || '').toLowerCase();
-      const amountStr = createMatch[2].replace(',', '.');
-      const rawDesc = createMatch[3].trim() || 'Lançamento WhatsApp';
-      const amountVal = parseFloat(amountStr);
+    if (parsedMsg) {
+      const { amountVal, rawDesc, isIncome, txType } = parsedMsg;
 
-      if (!isNaN(amountVal) && amountVal > 0) {
-        const isIncome = actionWord.includes('recebi');
-        const txType = isIncome ? 'INCOME' : 'EXPENSE';
-
-        const matchedCategory = findBestCategory(rawDesc, categories, isIncome);
+      const matchedCategory = findBestCategory(rawDesc, categories, isIncome);
 
         const defaultAccount = accounts[0];
         const dateStr = now.toISOString().slice(0, 10);
@@ -291,7 +341,6 @@ export async function POST(req: Request) {
           `• *Valor:* ${formatCurrency(amountVal)}\n` +
           `• *Tipo:* ${isIncome ? 'Receita 📈' : 'Despesa 📉'}\n` +
           `• *Categoria:* ${matchedCategory?.name || 'Geral'}`;
-      }
     }
 
     if (!replyMessage) {
