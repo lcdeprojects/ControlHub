@@ -6,7 +6,65 @@ import { formatCurrency } from '@/lib/utils';
 import { generateTransactionFingerprint } from '@/lib/engines/fingerprint';
 import { normalizeTransactionDescription } from '@/lib/engines/matching-algorithm';
 
-export const dynamic = 'force-dynamic';
+const CATEGORY_SYNONYMS: Record<string, string[]> = {
+  cat_restaurantes: ['almoço', 'almoço', 'almço', 'jantar', 'lanche', 'restaurante', 'ifood', 'comida', 'pf', 'padaria', 'bistrô', 'cafe', 'café', 'mcdonalds', 'burguer', 'pizza', 'sushi'],
+  cat_mercado: ['mercado', 'supermercado', 'compras', 'açougue', 'feira', 'carrefour', 'pao de acucar', 'assai', 'atacadao'],
+  cat_combustivel: ['combustivel', 'combustível', 'gasolina', 'etanol', 'diesel', 'posto', 'shell', 'ipiranga', 'br'],
+  cat_transporte: ['uber', '99', 'taxi', 'táxi', 'passagem', 'onibus', 'ônibus', 'metro', 'metrô', 'estacionamento', 'pedagio', 'pedágio'],
+  cat_saude: ['farmacia', 'farmácia', 'drogaria', 'remedio', 'remédio', 'medico', 'médico', 'consulta', 'exame', 'hospital', 'mounjaro', 'ozempic'],
+  cat_academia: ['academia', 'treino', 'crossfit', 'pilates', 'personal'],
+  cat_lazer: ['lazer', 'viagem', 'cinema', 'ingresso', 'show', 'hotel', 'pousada', 'praia'],
+  cat_assinaturas: ['netflix', 'spotify', 'prime', 'hbomax', 'disney', 'youtube', 'apple', 'icloud'],
+  cat_moradia: ['aluguel', 'condominio', 'condomínio', 'moradia'],
+  cat_energia: ['luz', 'energia', 'enel', 'cemig', 'cpfl'],
+  cat_agua: ['agua', 'água', 'sabesp', 'saneamento'],
+  cat_internet: ['internet', 'fibra', 'wifi', 'wi-fi', 'claro', 'vivo', 'tim'],
+  cat_salario: ['salario', 'salário', 'pagamento', 'holerite', 'prolabore', 'pró-labore'],
+  cat_rendimentos: ['dividendo', 'rendimento', 'juros', 'investimento'],
+};
+
+function findBestCategory(desc: string, categories: any[], isIncome: boolean) {
+  if (!categories || categories.length === 0) return null;
+  const descLower = desc.toLowerCase().trim();
+
+  // 1. Match direto pelo nome da categoria do usuário
+  for (const cat of categories) {
+    const catNameLower = cat.name.toLowerCase();
+    if (descLower.includes(catNameLower) || catNameLower.includes(descLower)) {
+      return cat;
+    }
+  }
+
+  // 2. Match por sinônimos conhecidos
+  for (const [sysId, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
+    if (synonyms.some((syn) => descLower.includes(syn))) {
+      const matched = categories.find((c) =>
+        c.id === sysId ||
+        (sysId === 'cat_restaurantes' && (c.name.toLowerCase().includes('restaurante') || c.name.toLowerCase().includes('alimenta'))) ||
+        (sysId === 'cat_mercado' && c.name.toLowerCase().includes('mercado')) ||
+        (sysId === 'cat_combustivel' && (c.name.toLowerCase().includes('combust') || c.name.toLowerCase().includes('posto'))) ||
+        (sysId === 'cat_transporte' && (c.name.toLowerCase().includes('transport') || c.name.toLowerCase().includes('uber'))) ||
+        (sysId === 'cat_saude' && (c.name.toLowerCase().includes('saúde') || c.name.toLowerCase().includes('saude') || c.name.toLowerCase().includes('farmá')))
+      );
+      if (matched) return matched;
+    }
+  }
+
+  // 3. Fallback inteligente sem pegar categorias específicas indesejadas
+  if (isIncome) {
+    return categories.find((c) => c.type === 'INCOME') || categories[0];
+  }
+
+  // Procura 'Outros', 'Geral', 'Alimentação' ou 'Despesas'
+  const defaultExpense = categories.find((c) =>
+    c.name.toLowerCase().includes('outro') ||
+    c.name.toLowerCase().includes('geral') ||
+    c.name.toLowerCase().includes('despesa') ||
+    c.name.toLowerCase().includes('restaurante')
+  ) || categories.find((c) => c.type === 'EXPENSE') || categories[0];
+
+  return defaultExpense;
+}
 
 // Verification GET & Test Simulation for WhatsApp Webhook Setup
 export async function GET(req: Request) {
@@ -172,9 +230,9 @@ export async function POST(req: Request) {
     let replyMessage = '';
     let txIdCreated: string | null = null;
 
-    // Tenta extrair lançamento do WhatsApp (Ex: "Almoço 45 reais", "Gastei 120 mercado", "Recebi 500 pix")
+    // Tenta extrair lançamento do WhatsApp (Ex: "Almoço 45 reais", "Gastei 120 mercado", "Gastri 45 almoço", "Recebi 500 pix")
     const createMatch = msgLower.match(
-      /(gastei|lançar|adicionar|paguei|compra|recebi|pix)?\s*(?:de\s+)?(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:em|no|na|com|para)?\s*(.*)/i
+      /(gastei|gastri|gaste|lançar|lancar|adicionar|paguei|pagou|comprei|compra|recebi|pix)?\s*(?:de\s+)?(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:em|no|na|com|para)?\s*(.*)/i
     );
 
     if (createMatch) {
@@ -187,17 +245,7 @@ export async function POST(req: Request) {
         const isIncome = actionWord.includes('recebi');
         const txType = isIncome ? 'INCOME' : 'EXPENSE';
 
-        let matchedCategory = categories.find((c) =>
-          rawDesc.toLowerCase().includes(c.name.toLowerCase())
-        );
-
-        if (!matchedCategory) {
-          if (isIncome) {
-            matchedCategory = categories.find((c) => c.type === 'INCOME') || categories[0];
-          } else {
-            matchedCategory = categories.find((c) => c.name.toLowerCase().includes('mercado') || c.type === 'EXPENSE') || categories[0];
-          }
-        }
+        const matchedCategory = findBestCategory(rawDesc, categories, isIncome);
 
         const defaultAccount = accounts[0];
         const dateStr = now.toISOString().slice(0, 10);
