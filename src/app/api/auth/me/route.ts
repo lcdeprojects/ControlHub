@@ -13,6 +13,7 @@ export async function GET(req: Request) {
         id: user.id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber || null,
         avatarColor: user.avatarColor,
         role: user.role || 'USER',
         subscriptionStatus: user.subscriptionStatus || 'TRIAL',

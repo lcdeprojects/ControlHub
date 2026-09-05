@@ -69,8 +69,11 @@ export async function POST(req: Request) {
         id: user.id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber || null,
         avatarColor: user.avatarColor,
         role: user.role || 'USER',
+        subscriptionStatus: user.subscriptionStatus || 'TRIAL',
+        trialEndsAt: user.trialEndsAt || null,
       },
     });
 

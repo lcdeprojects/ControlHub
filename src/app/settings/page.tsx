@@ -17,7 +17,10 @@ import {
   Save,
 } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function SettingsPage() {
+  const { user, refreshUser } = useAuth();
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'EXPENSE' | 'INCOME'>('ALL');
@@ -38,9 +41,18 @@ export default function SettingsPage() {
   const [showInQuickAdd, setShowInQuickAdd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (user?.phoneNumber !== undefined && user?.phoneNumber !== null) {
+      setPhoneNumber(user.phoneNumber);
+    }
+  }, [user]);
+
   const fetchProfile = async () => {
     try {
-      const res = await fetch('/api/users/profile');
+      const headers: Record<string, string> = {};
+      if (user?.id) headers['x-user-id'] = user.id;
+
+      const res = await fetch('/api/users/profile', { headers });
       const data = await res.json();
       if (data.success && data.profile) {
         setPhoneNumber(data.profile.phoneNumber || '');
@@ -68,7 +80,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchProfile();
     fetchCategories();
-  }, []);
+  }, [user?.id]);
 
   const handleSavePhone = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,9 +89,12 @@ export default function SettingsPage() {
     setPhoneError('');
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user?.id) headers['x-user-id'] = user.id;
+
       const res = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ phoneNumber }),
       });
 
@@ -88,7 +103,8 @@ export default function SettingsPage() {
         setPhoneError(data.error || 'Erro ao salvar número do WhatsApp.');
       } else {
         setPhoneSuccess('Número do WhatsApp atualizado com sucesso! Agora o bot responderá às suas mensagens.');
-        setPhoneNumber(data.profile.phoneNumber || '');
+        setPhoneNumber(data.profile?.phoneNumber || phoneNumber);
+        if (refreshUser) await refreshUser();
       }
     } catch (err: any) {
       setPhoneError(err.message || 'Erro de conexão.');

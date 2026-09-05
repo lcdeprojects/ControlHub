@@ -20,6 +20,7 @@ import {
   Link as LinkIcon,
   Copy,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
 
 const AVATAR_COLORS = [
@@ -67,10 +68,48 @@ export default function AdminBackofficePage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newPhone, setNewPhone] = useState('');
   const [newPin, setNewPin] = useState('');
   const [newRole, setNewRole] = useState<'USER' | 'ADMIN'>('USER');
   const [newColor, setNewColor] = useState(AVATAR_COLORS[0]);
   const [submittingCreate, setSubmittingCreate] = useState(false);
+
+  // Edit Phone Modal for Admin
+  const [editPhoneUser, setEditPhoneUser] = useState<UserItem | null>(null);
+  const [phoneInputVal, setPhoneInputVal] = useState('');
+  const [submittingPhoneEdit, setSubmittingPhoneEdit] = useState(false);
+
+  const handleUpdateUserPhoneAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editPhoneUser) return;
+    setSubmittingPhoneEdit(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editPhoneUser.id,
+          phoneNumber: phoneInputVal,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Erro ao atualizar telefone');
+      } else {
+        setSuccessMsg(`Telefone do usuário ${editPhoneUser.name} atualizado com sucesso!`);
+        setEditPhoneUser(null);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro de conexão');
+    } finally {
+      setSubmittingPhoneEdit(false);
+    }
+  };
 
   // Invite Link Modal
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -668,6 +707,18 @@ export default function AdminBackofficePage() {
                           </button>
 
                           <button
+                            onClick={() => {
+                              setEditPhoneUser(u);
+                              setPhoneInputVal(u.phoneNumber || '');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30 transition-colors cursor-pointer"
+                            title="Editar número do WhatsApp do usuário"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>WhatsApp</span>
+                          </button>
+
+                          <button
                             onClick={() => handleGenerateResetLink(u)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors cursor-pointer"
                             title="Gerar link temporário para o usuário redefinir a própria senha"
@@ -955,6 +1006,50 @@ export default function AdminBackofficePage() {
               </button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Edit Phone Modal (Admin) */}
+      {editPhoneUser && (
+        <Modal
+          isOpen={Boolean(editPhoneUser)}
+          onClose={() => setEditPhoneUser(null)}
+          title={`📱 Configurar WhatsApp: ${editPhoneUser.name}`}
+        >
+          <form onSubmit={handleUpdateUserPhoneAdmin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Número de Celular / WhatsApp (com DDD)
+              </label>
+              <input
+                type="text"
+                value={phoneInputVal}
+                onChange={(e) => setPhoneInputVal(e.target.value)}
+                placeholder="Ex: 5511999999999"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
+              <p className="text-[11px] text-zinc-400 mt-1">
+                Insira o número completo para vincular as mensagens enviadas ao robô da Evolution API.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setEditPhoneUser(null)}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submittingPhoneEdit}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer disabled:opacity-50"
+              >
+                {submittingPhoneEdit ? 'Salvando...' : 'Salvar Telefone'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

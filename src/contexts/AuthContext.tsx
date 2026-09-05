@@ -8,6 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phoneNumber?: string | null;
   avatarColor?: string;
   role?: 'ADMIN' | 'USER';
   subscriptionStatus?: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
