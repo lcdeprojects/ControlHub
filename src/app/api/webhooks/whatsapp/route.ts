@@ -103,7 +103,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Mensagem vazia' });
     }
 
-    // Tenta identificar o usuário pelo telefone ou usa o primeiro usuário como fallback
+    // Identifica o usuário estritamente pelo número de telefone cadastrado
     let user: any = null;
     if (fromNumber) {
       const cleanFrom = fromNumber.replace(/\D/g, '');
@@ -117,12 +117,18 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!user) {
+    // Fallback opcional apenas se explicitamente habilitado nas variáveis de ambiente
+    if (!user && process.env.ALLOW_UNMATCHED_WHATSAPP_FALLBACK === 'true') {
       user = await db.query.users.findFirst();
     }
 
     if (!user) {
-      return NextResponse.json({ error: 'Nenhum usuário cadastrado' }, { status: 404 });
+      console.log(`[WhatsApp Webhook] Mensagem ignorada: número ${fromNumber} não está cadastrado em nenhum usuário do sistema.`);
+      return NextResponse.json({
+        success: true,
+        ignored: 'Telefone não cadastrado no sistema',
+        fromNumber,
+      });
     }
 
     const userId = user.id;
